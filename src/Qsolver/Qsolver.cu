@@ -1,4 +1,46 @@
-#include <src/Qsolver/Qsolver.cuh>
+#include "Qsolver.cuh"
+
+void r1_init(Qreal *r1, Qreal dx, Qreal dy, int Nx, int Ny){
+    for (int j=0; j<Ny; j++){
+        for (int i=0; i<Nx; i++){
+            int index = i+j*Nx;
+            r1[index] = rand()*1.0/RAND_MAX - 0.5;
+        }
+    }
+}
+
+void r2_init(Qreal *r2, Qreal dx, Qreal dy, int Nx, int Ny){
+    for (int j=0; j<Ny; j++){
+        for (int i=0; i<Nx; i++){
+            int index = i+j*Nx;
+            r2[index] = rand()*1.0/RAND_MAX - 0.5;
+        }
+    }
+}
+
+
+void w_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny){
+    for (int j=0; j<Ny; j++){
+        for (int i=0; i<Nx; i++){
+            int index = i+j*Nx;
+            w[index] = 0.0;
+        }
+    }
+}
+
+void precompute_func(Field* r1, Field* r2, Field* w){
+    Mesh* mesh = r1->mesh;
+    int Nx = mesh->Nx; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
+    Qreal dx = mesh->dx; Qreal dy = mesh->dy;
+
+    r1_init(r1->phys, dx, dy, Nx, Ny);
+    r2_init(r2->phys, dx, dy, Nx, Ny);
+    w_init(w->phys, dx, dy, Nx, Ny);
+
+    FwdTrans(mesh, r1->phys, r1->spec);
+    FwdTrans(mesh, r2->phys, r2->spec);
+    FwdTrans(mesh, w->phys, w->spec);
+}
 
 
 int main(){
@@ -50,10 +92,12 @@ int main(){
     Field *alpha = new Field(mesh);
 
     //////////////////////// precomputation //////////////////////////
-    r1lin_func(r1IFh, r1IF, r1_old->mesh->k_squared, Re, cn, dt, r1_old->mesh->Nxh, r1_old->mesh->Ny, r1_old->mesh->BSZ);
-    r2lin_func(r2IFh, r2IF, r2_old->mesh->k_squared, Re, cn, dt, r2_old->mesh->Nxh, r2_old->mesh->Ny, r2_old->mesh->BSZ);
-    wlin_func(wIFh, wIF, w_old->mesh->k_squared, Re, cf, dt, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
-    
+    r1lin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r1IFh, r1IF, r1_old->mesh->k_squared, Re, cn, dt, r1_old->mesh->Nxh, r1_old->mesh->Ny, r1_old->mesh->BSZ);
+    r2lin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r2IFh, r2IF, r2_old->mesh->k_squared, Re, cn, dt, r2_old->mesh->Nxh, r2_old->mesh->Ny, r2_old->mesh->BSZ);
+    wlin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wIFh, wIF, w_old->mesh->k_squared, Re, cf, dt, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
+    // the precomputation function also updates the spectrum of corresponding variables
+    precompute_func(r1_old, r2_old, w_old);
+
     
     //////////////////////// time stepping //////////////////////////
     for(int m=0 ;m<Ns ;m++){
