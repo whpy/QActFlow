@@ -84,6 +84,13 @@ void SpecMul(Qreal* spa, Qcomp* spb, Qcomp C, Qcomp*spc, int Nxh, int Ny, int BS
 __global__ 
 void SpecMul(Qcomp* spa, Qreal* spb, Qcomp C, Qcomp*spc, int Nxh, int Ny, int BSZ);
 
+// __Device: set a constant spectrum 
+__global__
+void SpecSet(Qcomp * pa, Qcomp c, int Nxh, int Ny, int BSZ);
+// __Device: set two spectrums equal 
+__global__
+void SpecSet(Qcomp * pa, Qcomp * pb, int Nxh, int Ny, int BSZ);
+
 __global__ 
 void xDerivD(Qcomp *ft, Qcomp *dft, Qreal* kx, int Nxh, int Ny, int BSZ);
 void xDeriv(Qcomp *ft, Qcomp *dft, Mesh *mesh);

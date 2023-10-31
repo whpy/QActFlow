@@ -42,9 +42,9 @@ void integrate_func1D(Qcomp* spec_old, Qcomp* spec_curr, Qcomp* spec_new, Qcomp*
     if(i < Nxh && j < Ny){
         Qcomp an = spec_nonl[index]*dt;
         // u_{n+1} = u_{n}*exp(alpha * dt) + 1/6*exp(alpha*dt)*(a_n)
-        spec_new[index] = spec_new[index] + 1.f/6.f*IF[index]*an;
+        spec_new[index] = spec_new[index] + 1.0/6.0*IF[index]*an;
         // ucurr = (u_{n}+a_{n}/2)*exp(alpha*dt/2)
-        spec_curr[index] = (spec_old[index]+an/2.f) * IFh[index];
+        spec_curr[index] = (spec_old[index]+an/2.0) * IFh[index];
     }
 }
 void integrate_func1(Field* f_old, Field* f_curr, Field* f_new, Field*f_nonl, Qreal* IF, Qreal* IFh, Qreal dt){
@@ -67,9 +67,9 @@ __global__ void integrate_func2D(Qcomp* spec_old, Qcomp* spec_curr, Qcomp* spec_
     if(i < Nxh && j < Ny){
         Qcomp bn = spec_nonl[index]*dt;
         // u_{n+1} = u_{n}*exp(alpha * dt) + 1/6*exp(alpha*dt)*(a_n) + 1/3*exp(alpha*dt/2)*(b_n)
-        spec_new[index] = spec_new[index] + 1.f/3.f*IFh[index] * bn;
+        spec_new[index] = spec_new[index] + 1.0/3.0*IFh[index] * bn;
         // ucurr = (u_{n}*exp(alpha*dt/2) + b_{n}/2)
-        spec_curr[index] = (spec_old[index]*IFh[index] + bn/2.f) ;
+        spec_curr[index] = (spec_old[index]*IFh[index] + bn/2.0) ;
     }
 }
 void integrate_func2(Field* f_old, Field* f_curr, Field* f_new, Field*f_nonl, Qreal* IF, Qreal* IFh, Qreal dt){
@@ -93,7 +93,7 @@ __global__ void integrate_func3D(Qcomp* spec_old, Qcomp* spec_curr, Qcomp* spec_
         Qcomp cn = spec_nonl[index]*dt;
         // u_{n+1} = u_{n}*exp(alpha * dt) + 1/6*exp(alpha*dt)*(a_n) + 1/3*exp(alpha*dt/2)*(b_n) 
         //         + 1/3*exp(alpha*dt/2)*(c_n)
-        spec_new[index] = spec_new[index] + 1.f/3.f*IFh[index] * cn;
+        spec_new[index] = spec_new[index] + 1.0/3.0*IFh[index] * cn;
         // ucurr = u_{n}*exp(alpha*dt) + c_{n} * exp(alpha*dt/2)
         spec_curr[index] = (spec_old[index]*IF[index] + cn*IFh[index]) ;
     }
@@ -120,7 +120,7 @@ void integrate_func4D(Qcomp* spec_old, Qcomp* spec_curr, Qcomp* spec_new,
         Qcomp dn = spec_nonl[index]*dt;
         // u_{n+1} = u_{n}*exp(alpha * dt) + 1/6*exp(alpha*dt)*(a_n) + 1/3*exp(alpha*dt/2)*(b_n) 
         //         + 1/3*exp(alpha*dt/2)*(c_n) + 1/6*d_n
-        spec_new[index] = spec_new[index] + 1.f/6.f*dn;
+        spec_new[index] = spec_new[index] + 1.0/6.0*dn;
     }
 
 }

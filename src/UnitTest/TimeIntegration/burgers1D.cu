@@ -147,7 +147,7 @@ int main(){
     // print_phys(u);
     // cout << "b4 nonl the unonl"<<endl;
     // // print_phys(unonl);
-    // unonl_func(unonl, u, 0.f);
+    // unonl_func(unonl, u, 0.0);
     // cuda_error_func( cudaDeviceSynchronize() );
     // cout << "after nonl the unonl"<<endl;
     // print_phys(unonl);

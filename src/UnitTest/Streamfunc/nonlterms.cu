@@ -45,7 +45,7 @@ void SexactD(Qreal* S, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        S[index] = 2.f;
+        S[index] = 2.0;
     }
 }
 
@@ -57,7 +57,7 @@ void wexactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = -2.f*sin(x+y);
+        phys[index] = -2.0*sin(x+y);
     }
 }
 
@@ -96,7 +96,7 @@ void NL1exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
         phys[index] = 0.5*( cos(y) + cos(2*x+y) +
-        4.f*(lambda+cos(x))*sin(x+y) - 8.f*sin(x)*cn*cn/Pe );
+        4.0*(lambda+cos(x))*sin(x+y) - 8.0*sin(x)*cn*cn/Pe );
     }
 }
 
@@ -109,7 +109,7 @@ void NL2exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = -1.f*sin(x)*( cos(x+y) + 2.f*sin(x+y) ) - 4*cos(x)*cn*cn/Pe;
+        phys[index] = -1.0*sin(x)*( cos(x+y) + 2.0*sin(x+y) ) - 4*cos(x)*cn*cn/Pe;
     }
 }
 
@@ -121,7 +121,7 @@ void NL0exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal Er, Qreal Re, Qreal cn,
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = -1.f*cos(x)*(1+2*lambda+6*lambda*cn*cn)/(Er*Re);
+        phys[index] = -1.0*cos(x)*(1+2*lambda+6*lambda*cn*cn)/(Er*Re);
     }
 }
 
@@ -134,7 +134,7 @@ void Single1exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, 
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = sin(x)*(1+2.f*lambda + 6.f*lambda*cn*cn);
+        phys[index] = sin(x)*(1+2.0*lambda + 6.0*lambda*cn*cn);
     }
 }
 
@@ -147,7 +147,7 @@ void Single2exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, 
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = cos(x)*(1+2.f*lambda + 6.f*lambda*cn*cn);
+        phys[index] = cos(x)*(1+2.0*lambda + 6.0*lambda*cn*cn);
     }
 }
 
@@ -160,7 +160,7 @@ void crossexact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qr
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = 0.f;
+        phys[index] = 0.0;
     }
 }
 
@@ -189,8 +189,8 @@ Qreal lambda, Qreal cn, Qreal Pe, Qreal Er, Qreal Re){
     FwdTrans(mesh, r2->phys, r2->spec);
 
     // we want to test the currfunc so that we set the physics zero
-    FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(r1->phys, 0.f, mesh->Nx, mesh->Ny, mesh->BSZ);
-    FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(r2->phys, 0.f, mesh->Nx, mesh->Ny, mesh->BSZ);
+    FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(r1->phys, 0.0, mesh->Nx, mesh->Ny, mesh->BSZ);
+    FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(r2->phys, 0.0, mesh->Nx, mesh->Ny, mesh->BSZ);
     
     // update the spectral of vorticity
     FwdTrans(mesh, phi->phys, phi->spec);
@@ -309,8 +309,8 @@ int main(){
     Qreal lambda = 0.5;
     Qreal cn = 0.1;
     Qreal Pe = 0.3;
-    Qreal Re = 5.f;
-    Qreal Er = 6.f;
+    Qreal Re = 5.0;
+    Qreal Er = 6.0;
     Qreal dt = 0.05; // same as colin
     Qreal a = 1.0;
 
@@ -353,7 +353,7 @@ int main(){
     coord(*mesh);
     init(phi, wa, ua, va, r1, r2, Sa, single1a, single2a, nl0a, nl1a, nl2a, crossa, 
     lambda, cn, Pe, Er, Re);
-    FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(alpha->phys, 1.f, Nx, Ny, BSZ);
+    FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(alpha->phys, 1.0, Nx, Ny, BSZ);
     cuda_error_func( cudaDeviceSynchronize() );
     field_visual(phi, "phi.csv");
     field_visual(wa, "wa.csv");

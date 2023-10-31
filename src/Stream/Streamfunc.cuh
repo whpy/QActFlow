@@ -7,7 +7,7 @@
 
 __global__ 
 void vel_funcD(Qcomp* w_spec, Qcomp* u_spec, Qcomp* v_spec, 
-                            Qreal* k_squared, Qreal* kx, Qreal*ky, int Nxh, int Ny);
+                            Qreal* k_squared, Qreal* kx, Qreal*ky, int Nxh, int Ny, int BSZ);
 
 void vel_func(Field *w, Field *u, Field *v);
 

@@ -1,20 +1,21 @@
 #include <Stream/Streamfunc.cuh>
 
-__global__ void vel_funcD(Qcomp* w_spec, Qcomp* u_spec, Qcomp* v_spec, 
+__global__ 
+void vel_funcD(Qcomp* w_spec, Qcomp* u_spec, Qcomp* v_spec, 
                             Qreal* k_squared, Qreal* kx, Qreal*ky, int Nxh, int Ny, int BSZ){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
     if (i==0 && j==0)
     {
-        u_spec[index] = make_cuDoubleComplex(0.,0.);
-        v_spec[index] = make_cuDoubleComplex(0.,0.);
+        u_spec[index] = make_cuDoubleComplex(0.0,0.0);
+        v_spec[index] = make_cuDoubleComplex(0.0,0.0);
     }
     else if(i<Nxh && j<Ny){
         //u = -D_y(\phi) -> u_spec = -1 * i* ky* w_spec/(-1* (kx^2+ky^2) )
-        u_spec[index] = -1.f * ky[j]*im()*w_spec[index]/(-1.f*k_squared[index]);
+        u_spec[index] = -1.0 * ky[j]*im()*w_spec[index]/(-1.0*k_squared[index]);
         //v = D_x(\phi) -> v_spec = -1 * i* kx* w_spec/(-1* (kx^2+ky^2) )
-        v_spec[index] = kx[i]*im()*w_spec[index]/(-1.f*k_squared[index]);
+        v_spec[index] = kx[i]*im()*w_spec[index]/(-1.0*k_squared[index]);
     }
 }
 void vel_func(Field* w, Field* u, Field* v){
@@ -67,8 +68,8 @@ void r1lin_func(Qreal* IFr1h, Qreal* IFr1, Qreal* k_squared, Qreal Pe, Qreal cn,
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
     if(i<Nxh && j<Ny){
-        IFr1h[index] = exp((1.f/Pe*(-1.f*k_squared[index]+cn*cn))*dt/2);
-        IFr1[index] = exp((1.f/Pe*(-1.f*k_squared[index]+cn*cn))*dt);
+        IFr1h[index] = exp((1.0/Pe*(-1.0*k_squared[index]+cn*cn))*dt/2);
+        IFr1[index] = exp((1.0/Pe*(-1.0*k_squared[index]+cn*cn))*dt);
     }
 }
 
@@ -79,8 +80,8 @@ void r2lin_func(Qreal* IFr2h, Qreal* IFr2, Qreal* k_squared, Qreal Pe, Qreal cn,
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
     if(i<Nxh && j<Ny){
-        IFr2h[index] = exp((1.f/Pe*(-1.f*k_squared[index]+cn*cn))*dt/2);
-        IFr2[index] = exp((1.f/Pe*(-1.f*k_squared[index]+cn*cn))*dt);
+        IFr2h[index] = exp((1.0/Pe*(-1.0*k_squared[index]+cn*cn))*dt/2);
+        IFr2[index] = exp((1.0/Pe*(-1.0*k_squared[index]+cn*cn))*dt);
     }
 }
 
@@ -110,17 +111,17 @@ void pCross_func(Field *p, Field *aux, Field *r1, Field *r2){
     BwdTrans(aux->mesh, aux->spec, aux->phys);
     
     // p->phys = 2* r2*\Delta(r1)
-    FldMul<<<dimGrid, dimBlock>>>(aux->phys,r2->phys, 2.f, p->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(aux->phys,r2->phys, 2.0, p->phys, Nx, Ny, BSZ);
 
     //aux.spec = Four(/Delta(r2))
     laplacian_func(r2->spec,aux->spec,aux->mesh);
     //aux->phys = /Delta(r2)
     BwdTrans(aux->mesh, aux->spec, aux->phys);
     // aux->phys = -2* r1*\Delta(r2)
-    FldMul<<<dimGrid, dimBlock>>>(aux->phys,r1->phys, -2.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(aux->phys,r1->phys, -2.0, aux->phys, Nx, Ny, BSZ);
 
     // p.phys = aux.phys + p.phys = -2* r2*\Delta(r1) + 2* r2*\Delta(r1)
-    FldAdd<<<dimGrid, dimBlock>>>(1.f, p->phys, 1.f, aux->phys, p->phys, Nx, Ny, BSZ);
+    FldAdd<<<dimGrid, dimBlock>>>(1.0, p->phys, 1.0, aux->phys, p->phys, Nx, Ny, BSZ);
     // cross term physical value update successfully
 }
 
@@ -137,7 +138,7 @@ void pSingle_func(Field *p, Field *aux, Field *r, Field *S, Field *alpha, Qreal 
     dim3 dimBlock = p->mesh->dimBlockp;
     
     //aux.phys = \alpha* ri
-    FldMul<<<dimGrid, dimBlock>>>(r->phys, alpha->phys, 1.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(r->phys, alpha->phys, 1.0, aux->phys, Nx, Ny, BSZ);
     
     // -\lambda* S* \Delta(ri)
     // p.spec = \Delta(r)
@@ -146,26 +147,26 @@ void pSingle_func(Field *p, Field *aux, Field *r, Field *S, Field *alpha, Qreal 
     BwdTrans(p->mesh, p->spec, p->phys);
 
     // p.phys = -\lambda*\Delta(r)*S
-    FldMul<<<dimGrid, dimBlock>>>(p->phys, S->phys, -1.f*lambda, p->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(p->phys, S->phys, -1.0*lambda, p->phys, Nx, Ny, BSZ);
     // p.phys = p.phys + aux.phys = \alpha* ri -\lambda*\Delta(r)*S
-    FldAdd<<<dimGrid, dimBlock>>>(1.f, aux->phys, 1.f, p->phys, p->phys, Nx, Ny, BSZ);
+    FldAdd<<<dimGrid, dimBlock>>>(1.0, aux->phys, 1.0, p->phys, p->phys, Nx, Ny, BSZ);
 
     // \lambda*cn^2*(S^3)*ri
     // aux.phys = \lambda* cn^2 * S * S
     FldMul<<<dimGrid, dimBlock>>>(S->phys, S->phys, lambda*cn*cn, aux->phys, Nx, Ny, BSZ);
     // aux.phys =aux.phys* S = \lambda* cn^2 * S * S* S
-    FldMul<<<dimGrid, dimBlock>>>(aux->phys, S->phys, 1.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(aux->phys, S->phys, 1.0, aux->phys, Nx, Ny, BSZ);
     // aux.phys =aux.phys* ri = \lambda* cn^2 * S * S* S* ri
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, r->phys, 1., aux->phys, Nx, Ny, BSZ);
     // p.phys = p.phys + aux.phys = \alpha* ri -\lambda*\Delta(r)*alpha + \lambda*cn^2*S^3*ri
-    FldAdd<<<dimGrid, dimBlock>>>(1.f, aux->phys, 1.f, p->phys, p->phys, Nx, Ny, BSZ);
+    FldAdd<<<dimGrid, dimBlock>>>(1.0, aux->phys, 1.0, p->phys, p->phys, Nx, Ny, BSZ);
 
     // -\lambda* S*cn^2*ri
     // aux.phys = -1*\lambda* cn^2 * S * ri
     FldMul<<<dimGrid, dimBlock>>>(S->phys, r->phys, -1*lambda*cn*cn, aux->phys, Nx, Ny, BSZ);
     // p.phys = p.phys + aux.phys 
     // = \alpha* ri -\lambda*\Delta(r)*alpha + \lambda*cn^2*S^3*ri + (-1*\lambda*cn^2 *S*ri)
-    FldAdd<<<dimGrid, dimBlock>>>(1.f, aux->phys, 1.f, p->phys, p->phys, Nx, Ny, BSZ);
+    FldAdd<<<dimGrid, dimBlock>>>(1.0, aux->phys, 1.0, p->phys, p->phys, Nx, Ny, BSZ);
     // cross term physical value update successfully
 }
 
@@ -192,7 +193,7 @@ void p12nonl_func(Field *p12, Field *aux, Field *aux1, Field *r1, Field *r2, Fie
     // aux.phys = Single(r2) = \lambda* S(cn^2*(S^2-1)*r2 - \Delta r2) + \alpha*r2
     pSingle_func(aux, aux1, r2, S, alpha, lambda,cn);
     // p12.phys = p12.phys + aux.phys = Cross(r1,r2) + Single(r2)
-    FldAdd<<<dimGrid, dimBlock>>>(1.f, p12->phys, 1.f, aux->phys, p12->phys, Nx, Ny, BSZ);
+    FldAdd<<<dimGrid, dimBlock>>>(1.0, p12->phys, 1.0, aux->phys, p12->phys, Nx, Ny, BSZ);
     cuda_error_func( cudaDeviceSynchronize() );
     FwdTrans(p12->mesh, p12->phys, p12->spec);
     cuda_error_func( cudaDeviceSynchronize() );
@@ -212,7 +213,7 @@ void p21nonl_func(Field *p21, Field *aux, Field *aux1, Field *r1, Field *r2, Fie
     // aux.phys = Single(r2) = \lambda* S(cn^2*(S^2-1)*r2 - \Delta r2) + \alpha*r2
     pSingle_func(aux, aux1, r2, S, alpha, lambda, cn);
     // p21.phys = p21.phys + aux.phys = Cross(r2,r1) + Single(r2)
-    FldAdd<<<dimGrid, dimBlock>>>(1.f, p21->phys, 1.f, aux->phys, p21->phys, Nx, Ny, BSZ);
+    FldAdd<<<dimGrid, dimBlock>>>(1.0, p21->phys, 1.0, aux->phys, p21->phys, Nx, Ny, BSZ);
     cuda_error_func( cudaDeviceSynchronize() );
     FwdTrans(p21->mesh, p21->phys, p21->spec);
     cuda_error_func( cudaDeviceSynchronize() );
@@ -250,9 +251,9 @@ void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w,
 
     //(-cn^2/Pe *S^2*r1)
     // aux.phys = -1*cn^2/Pe*S*S
-    FldMul<<<dimGrid, dimBlock>>>(S->phys, S->phys, -1.f*cn*cn/Pe, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(S->phys, S->phys, -1.0*cn*cn/Pe, aux->phys, Nx, Ny, BSZ);
     // aux.phys = -1*cn^2/Pe*S*S*r1
-    FldMul<<<dimGrid, dimBlock>>>(aux->phys, r1->phys, 1.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(aux->phys, r1->phys, 1.0, aux->phys, Nx, Ny, BSZ);
     // r1nonl.phys = \lambda S\frac{\partial u}{\partial x}  + (-\omega_z* r2) + (-1*cn^2/Pe*S*S*r1)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r1nonl->phys, 1.0, aux->phys, r1nonl->phys, Nx, Ny, BSZ);
     cuda_error_func( cudaPeekAtLastError() );
@@ -264,7 +265,7 @@ void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w,
     // aux.phys = D_x(r1)
     BwdTrans(aux->mesh,aux->spec, aux->phys);
     // aux.phys = -1*aux.phys*u(x,y) = -1*D_x(r1)*u(x,y)
-    FldMul<<<dimGrid, dimBlock>>>(aux->phys, u->phys, -1.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(aux->phys, u->phys, -1.0, aux->phys, Nx, Ny, BSZ);
     // r1nonl.phys =
     // \lambda S\frac{\partial u}{\partial x}  + (-\omega_z* r2) + (-1*cn^2/Pe*S*S*r1) 
     // + (-1*D_x(r1)*u(x,y))
@@ -276,7 +277,7 @@ void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w,
     // aux.phys = D_y(r1)
     BwdTrans(aux->mesh,aux->spec, aux->phys);
     // aux.phys = -1*aux.phys*v(x,y) = -1*D_y(r1)*v(x,y)
-    FldMul<<<dimGrid, dimBlock>>>(aux->phys, v->phys, -1.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(aux->phys, v->phys, -1.0, aux->phys, Nx, Ny, BSZ);
     // r1nonl.phys = r1nonl.phys + aux.phys = 
     // \lambda S\frac{\partial u}{\partial x}  + (-\omega_z* r2) + (-1*cn^2/Pe*S*S*r1) 
     // + (-1*D_x(w)*u(x,y)) + (-1*v*D_y(r1))
@@ -331,9 +332,9 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
 
     //(-cn^2/Pe *S^2*r2)
     // aux.phys = -1*cn^2/Pe*S*S
-    FldMul<<<dimGrid, dimBlock>>>(S->phys, S->phys, -1.f*cn*cn/Pe, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(S->phys, S->phys, -1.0*cn*cn/Pe, aux->phys, Nx, Ny, BSZ);
     // aux.phys = -1*cn^2/Pe*S*S*r2
-    FldMul<<<dimGrid, dimBlock>>>(aux->phys, r2->phys, 1.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(aux->phys, r2->phys, 1.0, aux->phys, Nx, Ny, BSZ);
     // r1nonl.phys = (\lambda/2 *S(x,y) *D_x(u(x,y))) + (\lambda/2 *S(x,y) * D_x(u(x,y))) + (\omega_z* r2) + (-1*cn^2/Pe*S*S*r2)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, Nx, Ny, BSZ);
     cuda_error_func( cudaPeekAtLastError() );
@@ -345,7 +346,7 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     // aux.phys = D_x(r2)
     BwdTrans(aux->mesh,aux->spec, aux->phys);
     // aux.phys = -1*aux.phys*u(x,y) = -1*D_x(r2)*u(x,y)
-    FldMul<<<dimGrid, dimBlock>>>(aux->phys, u->phys, -1.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(aux->phys, u->phys, -1.0, aux->phys, Nx, Ny, BSZ);
     // r2nonl.phys =
     // (\lambda/2 *S(x,y) *D_x(u(x,y))) + (\lambda/2 *S(x,y) * D_x(u(x,y))) + (\omega_z* r2) 
     //+ (-1*cn^2/Pe*S*S*r2) + (-1*D_x(w)*u(x,y))
@@ -357,7 +358,7 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     // aux.phys = D_y(r2)
     BwdTrans(aux->mesh,aux->spec, aux->phys);
     // aux.phys = -1*aux.phys*v(x,y) = -1*D_y(r2)*v(x,y)
-    FldMul<<<dimGrid, dimBlock>>>(aux->phys, v->phys, -1.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(aux->phys, v->phys, -1.0, aux->phys, Nx, Ny, BSZ);
     // r2nonl.phys = r2nonl.phys + aux.phys = 
     // (\lambda/2 *S(x,y) *D_x(u(x,y))) + (\lambda/2 *S(x,y) * D_x(u(x,y))) + (\omega_z* r2) 
     // + (-1*cn^2/Pe*S*S*r2) + (-1*D_x(w)*u(x,y)) + (-1*v*D_y(\omega_z))
@@ -394,7 +395,7 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     // aux.spec = D_y(aux.spec) = D^2_xy(p11)
     yDeriv(aux->spec, aux->spec, aux->mesh);
     // wnonl.spec = D^2_xx(p12) - 2*aux.spec = D^2_xx(p12) - 2*D^2_xy(p11)
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.f, wnonl->spec, -2.f, aux->spec, 
+    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, -2.0, aux->spec, 
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
 
     // aux.spec = D_y(p21)
@@ -403,7 +404,7 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     yDeriv(aux->spec, aux->spec, aux->mesh);
     // wnonl.spec = D^2_xx(p12) - 2*D^2_xy(p11) - aux.spec 
     // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21)
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.f, wnonl->spec, -1.f, aux->spec, 
+    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, -1.0, aux->spec, 
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
 
     // aux.spec = D_x(w)
@@ -411,12 +412,12 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     // aux.phys = D_x(w)
     BwdTrans(aux->mesh, aux->spec, aux->phys);
     // aux.phys = (-1* u* D_x(w))
-    FldMul<<<mesh->dimGridp, mesh->dimBlockp>>>(aux->phys, u->phys, -1.f, aux->phys, Nx, Ny, BSZ);
+    FldMul<<<mesh->dimGridp, mesh->dimBlockp>>>(aux->phys, u->phys, -1.0, aux->phys, Nx, Ny, BSZ);
     // forward to the spectral: aux.spec = Four((-1* u* D_x(w)))
     FwdTrans(aux->mesh, aux->phys, aux->spec);
     // wnonl.spec = D^2_xx(p12) - 2*D^2_xy(p11) + aux.spec 
     // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21) + (-1* u* D_x(w))
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.f, wnonl->spec, 1.f, aux->spec, 
+    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, 1.0, aux->spec, 
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny,BSZ);
 
     // aux.spec = D_y(w)
@@ -431,7 +432,7 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21) + (-1* u* D_x(w)) + (-1* v* D_y(w))
     SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1., wnonl->spec, 1., aux->spec, 
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
-    SpecMul<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, 1.f/(Re*Er), wnonl->spec, Nxh, Ny, BSZ);
+    SpecMul<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, 1.0/(Re*Er), wnonl->spec, Nxh, Ny, BSZ);
     dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, mesh->cutoff, Nxh, Ny, BSZ);
     cuda_error_func( cudaDeviceSynchronize() );
     // here the wnonl has updated sucessfully

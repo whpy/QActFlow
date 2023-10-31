@@ -56,9 +56,9 @@ void unonl_func(Field* unonl, Field* ucurr,Qreal t){
     dim3 dimGrid = mesh->dimGridp;
     dim3 dimBlock = mesh->dimBlockp;
     // ucurr = ucurr*ucurr
-    FldMul<<<dimGrid, dimBlock>>>(ucurr->phys, ucurr->phys, 1.f, ucurr->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    FldMul<<<dimGrid, dimBlock>>>(ucurr->phys, ucurr->phys, 1.0, ucurr->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
     // ucurr = ucurr + 1 = ucurr*ucurr + 1
-    FldAdd<<<dimGrid, dimBlock>>>(1.f, ucurr->phys, 1.f, ucurr->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    FldAdd<<<dimGrid, dimBlock>>>(1.0, ucurr->phys, 1.0, ucurr->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
     // unonl = ucurr = ucurr*ucurr + 1
     FldSet<<<dimGrid, dimBlock>>>(unonl->phys, ucurr->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
     
@@ -129,7 +129,7 @@ int main(){
 
     // cout << "b4 nonl the unonl"<<endl;
     // // print_phys(unonl);
-    // unonl_func(unonl, u, 0.f);
+    // unonl_func(unonl, u, 0.0);
     // cuda_error_func( cudaDeviceSynchronize() );
     // cout << "after nonl the unonl"<<endl;
     // print_phys(unonl);

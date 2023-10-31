@@ -25,7 +25,7 @@ __global__
 	// the first column due to the zero value of wavenumver in x, the sequence
 	// degenerates to the trivial one-dimensional dft which need to fulfil symmetry
 	// here size equal to (Nx/2+1)*Ny where the size of wave numbers.
-	Qcomp mean_value{ 0.f, 0.f };
+	Qcomp mean_value{ 0.0, 0.0 };
     if (i==0 && 0<j && j<Ny/2){
         // printf("%d, %d \n",i,j);
         int index2 = (Ny-j)*Nxh + i;
@@ -223,7 +223,7 @@ void laplacian_funcD(Qcomp *ft, Qcomp *lft, Qreal* k_squared, int Nxh, int Ny, i
     int index = i + j*Nxh;
     if(i<Nxh && j<Ny){
         // \hat{Dxx(u) + Dyy(u)} = -1*(kx^2 + ky^2)*\hat{u}
-        lft[index] = -1.f* k_squared[index]*ft[index]; 
+        lft[index] = -1.0* k_squared[index]*ft[index]; 
     }
 }
 void laplacian_func(Qcomp *ft, Qcomp *lft, Mesh* mesh){
