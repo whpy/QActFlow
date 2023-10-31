@@ -28,6 +28,14 @@ void w_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny){
     }
 }
 
+void alpha_init(Qreal *alpha, Qreal dx, Qreal dy, int Nx, int Ny){
+    for (int j=0; j<Ny; j++){
+        for (int i=0; i<Nx; i++){
+            int index = i+j*Nx;
+            alpha[index] = 0.6;
+        }
+    }
+}
 void precompute_func(Field* r1, Field* r2, Field* w){
     Mesh* mesh = r1->mesh;
     int Nx = mesh->Nx; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
@@ -59,7 +67,7 @@ int main(){
 
     //////////////////////// variables definitions //////////////////////////
     // parameters
-    Qreal lambda;
+    Qreal lambda = ;
     Qreal cn;
     Qreal Er;
     Qreal Re;
@@ -97,6 +105,7 @@ int main(){
     wlin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wIFh, wIF, w_old->mesh->k_squared, Re, cf, dt, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
     // the precomputation function also updates the spectrum of corresponding variables
     precompute_func(r1_old, r2_old, w_old);
+    alpha_init(alpha->phys, dx, dy, Nx, Ny);
 
     
     //////////////////////// time stepping //////////////////////////
