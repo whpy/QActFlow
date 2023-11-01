@@ -1,19 +1,22 @@
 clear;
 clc;
 close all;
+% 
+% namelist = dir("*.csv");
+% for i = 1:length(namelist)
+%     load(namelist(i).name)
+% end
+load("x.csv")
+load("y.csv")
+load("760w.csv")
 
-namelist = dir("*.csv");
-for i = 1:length(namelist)
-    load(namelist(i).name)
-end
+load("760r2.csv")
 
-for i = 0:2:200
-    ut = load(num2str(i)+"u.csv");
-    figure(i+1)
-    plot(x(1,:),ut(1,:))
-    axis([0 2*pi -2 2])
-    title(i)
-end
+load("760r1.csv")
+visual(X760r1,1,x,y)
+visual(X760r2,2,x,y)
+visual(X760w,3,x,y)
+
 % visual(X0u,1,x,y)
 % visual(X2000u,1,x,y)
 % visual(X4000u,1,x,y)
@@ -41,6 +44,7 @@ end
 % visual(p12a, 8, x, y)
 % title("p12a")
 % visual(p12, 9, x, y)
+
 % title("p12")
 % visual(p21a, 10, x, y)
 % title("p21a")

@@ -32,13 +32,13 @@ void alpha_init(Qreal *alpha, Qreal Ra, Qreal dx, Qreal dy, int Nx, int Ny){
     for (int j=0; j<Ny; j++){
         for (int i=0; i<Nx; i++){
             int index = i+j*Nx;
-            alpha[index] = sqrt(Ra);
+            alpha[index] = -1.0*(Ra);
         }
     }
 }
 void precompute_func(Field* r1, Field* r2, Field* w){
     Mesh* mesh = r1->mesh;
-    int Nx = mesh->Nx; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
+    int Nx = mesh->Nx; int Ny = mesh->Ny;
     Qreal dx = mesh->dx; Qreal dy = mesh->dy;
 
     r1_init(r1->phys, dx, dy, Nx, Ny);
@@ -54,33 +54,42 @@ void precompute_func(Field* r1, Field* r2, Field* w){
 int main(){
     // computation parameters
     int BSZ = 16;
-    int Ns = 4000;
-    int Nx = 512*3/2; // same as colin
-    int Ny = 512*3/2;
+    int Ns = 2000000;
+    int Nx = 512; // same as colin
+    int Ny = 512;
     int Nxh = Nx/2+1;
-    Qreal Lx = 512*3/2 * 0.4;
+    Qreal Lx = 512 * 0.02;
     Qreal Ly = Lx;
     Qreal dx = 0.4;
     Qreal dy = 0.4;
-    Qreal dt = 0.002; // same as colin
-    Qreal a = 1.0;
+    Qreal dt = 0.0005; // same as colin
+    // Qreal a = 1.0;
 
     //////////////////////// variables definitions //////////////////////////
 
     // non-dimensional number in "The role of advective inertia in active nematic"  
-    double Re_n = 0.1;
+    double Re_n = 1.0;
     // to distinguish the Er we use in theis programe
     // we denotes the Er in paper as Er_n
-    double Er_n = 0.1;
+    double Er_n = 1.0;
     // Ra = ln/la, which the square of \tiled(alpha)
-    double Ra = 0.025; 
-    double Rf = 7.5E-5;
+    
+    double Rf = 1/(20*sqrt(3));
+    double ln = 0.05;
+    double lc = ln;
+    double lf = sqrt(10.0/3.0);
+    double Ra = (lc/100)*(lc/100); 
+    Ra = 0.25;
+
 
     Qreal lambda = 0.1;
+    
     // C_{cn} = lc/ln = 1.0 as colin set lc = ln.
+    // Qreal cn = lc/ln;
     Qreal cn = 1.0;
     // C_{cf} = lc/lf = ln/lf = sqrt(Rf)
-    Qreal cf = sqrt(Rf);
+    // Qreal cf = lc/lf;
+    Qreal cf = 7.5*0.00001;
     Qreal Er = Er_n;
     Qreal Re = Re_n;
     // by specially choosing the scales, colin make the Pe equals to 1.0
@@ -120,8 +129,10 @@ int main(){
     // the precomputation function also updates the spectrum of corresponding variables
     precompute_func(r1_old, r2_old, w_old);
     alpha_init(alpha->phys, Ra, dx, dy, Nx, Ny);
+    FwdTrans(mesh, alpha->phys, alpha->spec);
     
     // prepare the referenced system
+    cuda_error_func( cudaDeviceSynchronize() );
     coord(*mesh);
     
     //////////////////////// time stepping //////////////////////////
@@ -130,6 +141,7 @@ int main(){
         integrate_func0(r1_old, r1_curr, r1_new, r1IF, r1IFh, dt);
         integrate_func0(r2_old, r2_curr, r2_new, r2IF, r2IFh, dt);
         curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        cuda_error_func( cudaDeviceSynchronize() );
         // BwdTrans(mesh, ucurr->spec, ucurr->phys);
         
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1_curr, r2_curr, w_curr, u, v, alpha, S, Re, Er, cn, lambda);
@@ -139,6 +151,7 @@ int main(){
         integrate_func1(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func1(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
         curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        cuda_error_func( cudaDeviceSynchronize() );
         // unonl_func(unonl, ucurr, m*dt);
         // cuda_error_func( cudaDeviceSynchronize() );
         // integrate_func1(u, ucurr, unew, unonl, IFu, IFuh, dt);
@@ -151,6 +164,7 @@ int main(){
         integrate_func2(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func2(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
         curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        cuda_error_func( cudaDeviceSynchronize() );
         // unonl_func(unonl, ucurr, m*dt);
         // integrate_func2(u, ucurr, unew, unonl, IFu, IFuh, dt);
         // BwdTrans(mesh, ucurr->spec, ucurr->phys);
@@ -162,6 +176,7 @@ int main(){
         integrate_func3(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func3(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
         curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        cuda_error_func( cudaDeviceSynchronize() );
         // unonl_func(unonl, ucurr, m*dt);
         // integrate_func3(u, ucurr, unew, unonl, IFu, IFuh, dt);
         // BwdTrans(mesh, ucurr->spec, ucurr->phys);
@@ -173,6 +188,7 @@ int main(){
         integrate_func4(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func4(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
         curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        cuda_error_func( cudaDeviceSynchronize() );
         // unonl_func(unonl, ucurr, m*dt);
         // integrate_func4(u, ucurr, unew, unonl, IFu, IFuh, dt);
         // BwdTrans(mesh, ucurr->spec, ucurr->phys);
@@ -183,7 +199,19 @@ int main(){
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r1_old->spec, r1_new->spec, r1_old->mesh->Nxh, r1_old->mesh->Ny, r1_old->mesh->BSZ);
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r2_old->spec, r2_new->spec, r2_old->mesh->Nxh, r2_old->mesh->Ny, r2_old->mesh->BSZ);
         // SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(u->spec, unew->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        
+        cuda_error_func( cudaDeviceSynchronize() );
+
+        if (m%10 == 0) cout << "t = " << m*dt << endl;
+        if (m%2000 == 0){
+            BwdTrans(mesh, r1_old->spec, r1_old->phys);
+            BwdTrans(mesh, r2_old->spec, r2_old->phys);
+            BwdTrans(mesh, w_old->spec, w_old->phys);
+            cuda_error_func( cudaDeviceSynchronize() );
+            field_visual(r1_old, to_string(m)+"r1.csv");
+            field_visual(r2_old, to_string(m)+"r2.csv");
+            field_visual(w_old, to_string(m)+"w.csv");
+
+        }
         // if(m%100 == 0) cout << "t = " << m*dt << endl;
         // if (m%200 == 0){
         //     BwdTrans(mesh, u->spec, u->phys);

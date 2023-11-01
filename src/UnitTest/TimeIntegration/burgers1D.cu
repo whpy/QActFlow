@@ -14,7 +14,7 @@ __global__ void init_func(Qreal* fp, Qreal dx, Qreal dy, int Nx, int Ny, int BSZ
     if(i<Nx && j<Ny){
         Qreal x = i*dx;
         Qreal y = j*dy;
-        fp[index] = exp(-(x-M_PI)*(x-M_PI)/2);
+        fp[index] = -1.0*sin(x);
     }
 }
 
@@ -111,15 +111,15 @@ void coord(Mesh &mesh){
 // the exact solution should be u = c0*exp(-t), c0 depends on initial conditon.
 int main(){
     int BSZ = 16;
-    int Ns = 4000;
+    int Ns = 201;
     int Nx = 512; // same as colin
-    int Ny = 512;
+    int Ny = 16;
     int Nxh = Nx/2+1;
     Qreal Lx = 2*M_PI;
     Qreal Ly = 2*M_PI;
     Qreal dx = 2*M_PI/Nx;
     Qreal dy = 2*M_PI/Ny;
-    Qreal dt = 0.002; // same as colin
+    Qreal dt = 0.02; // same as colin
     Qreal a = 1.0;
 
     // Fldset test
@@ -178,8 +178,8 @@ int main(){
         unonl_func(unonl, ucurr, m*dt);
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(u->spec, unew->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
         
-        if(m%100 == 0) cout << "t = " << m*dt << endl;
-        if (m%200 == 0){
+        if(m%1 == 0) cout << "t = " << m*dt << endl;
+        if (m%2 == 0){
             BwdTrans(mesh, u->spec, u->phys);
             cuda_error_func( cudaDeviceSynchronize() );
             field_visual(u, to_string(m)+"u.csv");

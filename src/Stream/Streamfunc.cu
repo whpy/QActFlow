@@ -68,8 +68,8 @@ void r1lin_func(Qreal* IFr1h, Qreal* IFr1, Qreal* k_squared, Qreal Pe, Qreal cn,
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
     if(i<Nxh && j<Ny){
-        IFr1h[index] = exp((1.0/Pe*(-1.0*k_squared[index]+cn*cn))*dt/2);
-        IFr1[index] = exp((1.0/Pe*(-1.0*k_squared[index]+cn*cn))*dt);
+        IFr1h[index] = exp( (1.0/Pe*(-1.0*k_squared[index]+cn*cn) )*dt/2);
+        IFr1[index] = exp( (1.0/Pe*(-1.0*k_squared[index]+cn*cn) )*dt);
     }
 }
 
@@ -80,8 +80,8 @@ void r2lin_func(Qreal* IFr2h, Qreal* IFr2, Qreal* k_squared, Qreal Pe, Qreal cn,
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
     if(i<Nxh && j<Ny){
-        IFr2h[index] = exp((1.0/Pe*(-1.0*k_squared[index]+cn*cn))*dt/2);
-        IFr2[index] = exp((1.0/Pe*(-1.0*k_squared[index]+cn*cn))*dt);
+        IFr2h[index] = exp( (1.0/Pe*(-1.0*k_squared[index]+cn*cn) )*dt/2);
+        IFr2[index] = exp( (1.0/Pe*(-1.0*k_squared[index]+cn*cn) )*dt);
     }
 }
 
@@ -92,8 +92,8 @@ void wlin_func(Qreal* IFwh, Qreal* IFw, Qreal* k_squared, Qreal Re, Qreal cf, Qr
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
     if(i<Nxh && j<Ny){
-        IFwh[index] = exp( ((-1.0*k_squared[index])-1.0) *dt/2);
-        IFw[index] = exp( ((-1.0*k_squared[index])-1.0) *dt);
+        IFwh[index] = exp( (1.0/Re*(-1.0*k_squared[index])-1.0*cf*cf) *dt/2);
+        IFw[index] = exp( (1.0/Re*(-1.0*k_squared[index])-1.0*cf*cf) *dt);
     }
 }
 
