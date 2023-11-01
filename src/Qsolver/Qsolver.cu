@@ -67,12 +67,21 @@ int main(){
 
     //////////////////////// variables definitions //////////////////////////
     // parameters
-    Qreal lambda = ;
-    Qreal cn;
+    Qreal lambda = 0.1;
+    // C_{cn} = lc/ln
+    double alpha = 
+    double K = 1.0;
+    double gamma = 10.0;
+    double C = 4.0*10000.0;
+    double lc = ;
+    double ln = sqrt(K/abs(alpha)); 
+    Qreal cn = lc/ln;
+    // C_{cf} = lc/lf
+    Qreal cf ;
     Qreal Er;
     Qreal Re;
     Qreal Pe;
-    Qreal cf ;
+    
     // main Fields to be solved
     // *_curr act as an intermediate while RK4 timeintegration
     // *_new store the value of next time step 

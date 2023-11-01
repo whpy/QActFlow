@@ -7,9 +7,9 @@ for i = 1:length(namelist)
     load(namelist(i).name)
 end
 
-visual(r1, 1, x, y)
-visual(r2, 2, x, y)
-visual(w, 3, x, y)
+visual(cross1, 1, x, y)
+visual(crossa, 2, x, y)
+
 
 
 function visual(f,n,x,y)

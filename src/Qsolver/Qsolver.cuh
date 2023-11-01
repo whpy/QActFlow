@@ -6,18 +6,21 @@
 #include <Basic/Field.h>
 #include <Stream/Streamfunc.cuh>
 #include <TimeIntegration/RK4.cuh>
-#include <random>
+
+#include <stdlib.h>
+#include <time.h>
 #include <BasicUtils/UtilFuncs.hpp>
 
-__global__ 
-void r1_init(Qreal *r1, Qreal dx, Qreal dy, int Nx, int Ny, int BSZ);
+ 
+void r1_init(Qreal *r1, Qreal dx, Qreal dy, int Nx, int Ny);
 
-__global__ 
-void r2_init(Qreal *r2, Qreal dx, Qreal dy, int Nx, int Ny, int BSZ);
 
-__global__ 
-void w_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny, int BSZ);
+void r2_init(Qreal *r2, Qreal dx, Qreal dy, int Nx, int Ny);
 
-inline 
+
+void w_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny);
+
+
 void precompute_func(Field* r1, Field* r2, Field* w);
+
 #endif
