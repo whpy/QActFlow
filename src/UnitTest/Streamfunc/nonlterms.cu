@@ -434,10 +434,27 @@ int main(){
     xDeriv(p12->spec, aux->spec, mesh);
     cuda_error_func( cudaDeviceSynchronize() );
     xDeriv(aux->spec, aux->spec, mesh);
-    dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(aux->spec, mesh->cutoff, Nxh, Ny, BSZ);
-    BwdTrans(mesh, aux->spec, aux->phys);
+    dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(aux->spec, mesh->cutoff, Nxh, Ny, BSZ); 
+    BwdTrans(nl0->mesh, nl0->spec, nl0->phys);
     cuda_error_func( cudaDeviceSynchronize() );
-    field_visual(aux, "Dxxp12.csv");   
+
+
+    // second time, to test whether it is repeatable
+    r1nonl_func(nl1, aux, r1, r2, w, u, v, S, lambda, cn, Pe);
+    r2nonl_func(nl2, aux, r1, r2, w, u, v, S, lambda, cn, Pe);
+    p11nonl_func(p11, aux, aux1, r1, r2, S, alpha, lambda, cn);
+    p12nonl_func(p12, aux, aux1, r1, r2, S, alpha, lambda, cn);
+    p21nonl_func(p21, aux, aux1, r1, r2, S, alpha, lambda, cn);
+    cuda_error_func( cudaDeviceSynchronize() );
+
+    wnonl_func(nl0, aux, aux1, p11, p12, p21, r1, r2, 
+    w, u, v, alpha, S, Re, Er, cn, lambda);
+
+    FwdTrans(mesh, p12->phys, p12->spec);
+    xDeriv(p12->spec, aux->spec, mesh);
+    cuda_error_func( cudaDeviceSynchronize() );
+    xDeriv(aux->spec, aux->spec, mesh);
+    dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(aux->spec, mesh->cutoff, Nxh, Ny, BSZ); 
     BwdTrans(nl0->mesh, nl0->spec, nl0->phys);
     cuda_error_func( cudaDeviceSynchronize() );
     field_visual(nl1, "nl1.csv");
