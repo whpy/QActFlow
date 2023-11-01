@@ -28,11 +28,11 @@ void w_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny){
     }
 }
 
-void alpha_init(Qreal *alpha, Qreal dx, Qreal dy, int Nx, int Ny){
+void alpha_init(Qreal *alpha, Qreal Ra, Qreal dx, Qreal dy, int Nx, int Ny){
     for (int j=0; j<Ny; j++){
         for (int i=0; i<Nx; i++){
             int index = i+j*Nx;
-            alpha[index] = 0.6;
+            alpha[index] = sqrt(Ra);
         }
     }
 }
@@ -55,32 +55,36 @@ int main(){
     // computation parameters
     int BSZ = 16;
     int Ns = 4000;
-    int Nx = 512; // same as colin
-    int Ny = 512;
+    int Nx = 512*3/2; // same as colin
+    int Ny = 512*3/2;
     int Nxh = Nx/2+1;
-    Qreal Lx = 2*M_PI;
-    Qreal Ly = 2*M_PI;
-    Qreal dx = 2*M_PI/Nx;
-    Qreal dy = 2*M_PI/Ny;
+    Qreal Lx = 512*3/2 * 0.4;
+    Qreal Ly = Lx;
+    Qreal dx = 0.4;
+    Qreal dy = 0.4;
     Qreal dt = 0.002; // same as colin
     Qreal a = 1.0;
 
     //////////////////////// variables definitions //////////////////////////
-    // parameters
+
+    // non-dimensional number in "The role of advective inertia in active nematic"  
+    double Re_n = 0.1;
+    // to distinguish the Er we use in theis programe
+    // we denotes the Er in paper as Er_n
+    double Er_n = 0.1;
+    // Ra = ln/la, which the square of \tiled(alpha)
+    double Ra = 0.025; 
+    double Rf = 7.5E-5;
+
     Qreal lambda = 0.1;
-    // C_{cn} = lc/ln
-    double alpha = 
-    double K = 1.0;
-    double gamma = 10.0;
-    double C = 4.0*10000.0;
-    double lc = ;
-    double ln = sqrt(K/abs(alpha)); 
-    Qreal cn = lc/ln;
-    // C_{cf} = lc/lf
-    Qreal cf ;
-    Qreal Er;
-    Qreal Re;
-    Qreal Pe;
+    // C_{cn} = lc/ln = 1.0 as colin set lc = ln.
+    Qreal cn = 1.0;
+    // C_{cf} = lc/lf = ln/lf = sqrt(Rf)
+    Qreal cf = sqrt(Rf);
+    Qreal Er = Er_n;
+    Qreal Re = Re_n;
+    // by specially choosing the scales, colin make the Pe equals to 1.0
+    Qreal Pe = 1.0;
     
     // main Fields to be solved
     // *_curr act as an intermediate while RK4 timeintegration
@@ -112,10 +116,13 @@ int main(){
     r1lin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r1IFh, r1IF, r1_old->mesh->k_squared, Re, cn, dt, r1_old->mesh->Nxh, r1_old->mesh->Ny, r1_old->mesh->BSZ);
     r2lin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r2IFh, r2IF, r2_old->mesh->k_squared, Re, cn, dt, r2_old->mesh->Nxh, r2_old->mesh->Ny, r2_old->mesh->BSZ);
     wlin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wIFh, wIF, w_old->mesh->k_squared, Re, cf, dt, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
+    
     // the precomputation function also updates the spectrum of corresponding variables
     precompute_func(r1_old, r2_old, w_old);
-    alpha_init(alpha->phys, dx, dy, Nx, Ny);
-
+    alpha_init(alpha->phys, Ra, dx, dy, Nx, Ny);
+    
+    // prepare the referenced system
+    coord(*mesh);
     
     //////////////////////// time stepping //////////////////////////
     for(int m=0 ;m<Ns ;m++){
