@@ -17,6 +17,14 @@ nonlterms:
 	$(NVCC) -I $(INC) -c nonlterms.cu
 	$(NVCC) -o main nonlterms.o Field.o Mesh.o FldOp.o Streamfunc.o -lcufft
 
+nonlterms2:
+	$(NVCC) -I $(INC) -c $(SRC)/Basic/Field.cpp
+	$(NVCC) -I $(INC) -c $(SRC)/Basic/Mesh.cpp
+	$(NVCC) -I $(INC) -c $(SRC)/Basic/FldOp.cu
+	$(NVCC) -I $(INC) -c $(SRC)/Stream/Streamfunc.cu
+	$(NVCC) -I $(INC) -c nonlterms2.cu
+	$(NVCC) -o main nonlterms2.o Field.o Mesh.o FldOp.o Streamfunc.o -lcufft
+
 crossterm:
 	$(NVCC) -I $(INC) -c $(SRC)/Basic/Field.cpp
 	$(NVCC) -I $(INC) -c $(SRC)/Basic/Mesh.cpp

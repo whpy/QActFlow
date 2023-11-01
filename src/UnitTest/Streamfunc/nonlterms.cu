@@ -439,7 +439,7 @@ int main(){
     cuda_error_func( cudaDeviceSynchronize() );
 
 
-    // second time, to test whether it is repeatable
+    // second time, to test whether it is rep
     r1nonl_func(nl1, aux, r1, r2, w, u, v, S, lambda, cn, Pe);
     r2nonl_func(nl2, aux, r1, r2, w, u, v, S, lambda, cn, Pe);
     p11nonl_func(p11, aux, aux1, r1, r2, S, alpha, lambda, cn);
