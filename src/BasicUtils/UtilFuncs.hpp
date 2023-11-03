@@ -100,7 +100,7 @@ void file_init(string filename, Field* f){
     for (int j=0; j<Ny; j++){
         for (int i=0; i<Nx; i++){
             index = j*Nx + i;
-            f->phys[index] = string2num<double>(data[i][j]);
+            f->phys[index] = string2num<double>(data[j][i]);
         }
     }
     infile.close();
