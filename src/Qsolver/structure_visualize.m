@@ -8,15 +8,20 @@ close all;
 % end
 load("x.csv")
 load("y.csv")
-load("760w.csv")
+n = 19980
+w = load(num2str(n)+"w.csv");
 
-load("760r2.csv")
+r1 = load(num2str(n)+"r2.csv");
 
-load("760r1.csv")
-visual(X760r1,1,x,y)
-visual(X760r2,2,x,y)
-visual(X760w,3,x,y)
+r2 = load(num2str(n)+"r1.csv");
+visual(r1,1,x,y)
+caxis([-0.5 0.5])
 
+visual(r2,2,x,y)
+caxis([-0.5 0.5])
+
+visual(w,3,x,y)
+caxis([-1 1])
 % visual(X0u,1,x,y)
 % visual(X2000u,1,x,y)
 % visual(X4000u,1,x,y)

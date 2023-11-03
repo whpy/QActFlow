@@ -7,10 +7,9 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
-
-using std::string;
-using std::cout; 
-using std::endl;
+#include <string>
+#include <sstream>
+using namespace std;
 
 void field_visual(Field *f, string name){
     Mesh* mesh = f->mesh;
@@ -50,7 +49,7 @@ void print_phys(Field* f){
     }
 }
 
-;void coord(Mesh &mesh){
+void coord(Mesh &mesh){
     ofstream xcoord("x.csv");
     ofstream ycoord("y.csv");
     for (int j=0; j<mesh.Ny; j++){
@@ -67,4 +66,43 @@ void print_phys(Field* f){
     ycoord.close();
 }
 
+template <class T>
+T string2num(const string& str){
+    istringstream iss(str);
+    T num;
+    iss >> num;
+    return num;
+}
+
+void file_init(string filename, Field* f){
+    int Nx = f->mesh->Nx;
+    int Ny = f->mesh->Ny;
+
+    ifstream infile(filename);
+    vector<vector<string>> data;
+    string strline;
+    while(getline(infile, strline)){
+        stringstream ss(strline);
+        string str;
+        vector<string> dataline;
+
+        while(getline(ss, str, ',')){
+            dataline.push_back(str);
+        }
+        data.push_back(dataline);
+    }
+
+    if(data.size() != Ny || data[0].size() != Nx){
+        printf("READ_CSV_ERROR: size not match! \n");
+        return;
+    }
+    int index = 0;
+    for (int j=0; j<Ny; j++){
+        for (int i=0; i<Nx; i++){
+            index = j*Nx + i;
+            f->phys[index] = string2num<double>(data[i][j]);
+        }
+    }
+    infile.close();
+}
 #endif

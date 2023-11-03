@@ -14,7 +14,7 @@ void vel_funcD(Qcomp* w_spec, Qcomp* u_spec, Qcomp* v_spec,
     else if(i<Nxh && j<Ny){
         //u = -D_y(\phi) -> u_spec = -1 * i* ky* w_spec/(-1* (kx^2+ky^2) )
         u_spec[index] = -1.0 * ky[j]*im()*w_spec[index]/(-1.0*k_squared[index]);
-        //v = D_x(\phi) -> v_spec = -1 * i* kx* w_spec/(-1* (kx^2+ky^2) )
+        //v = D_x(\phi) -> v_spec = i* kx* w_spec/(-1* (kx^2+ky^2) )
         v_spec[index] = kx[i]*im()*w_spec[index]/(-1.0*k_squared[index]);
     }
 }
@@ -50,6 +50,8 @@ void S_func(Field* r1, Field* r2, Field* S){
 
 void curr_func(Field *r1curr, Field *r2curr, Field *wcurr, Field *u, Field *v, Field *S){
     // obtain the physical values of velocities and r_i
+    // we default that the accepted Field are all only update the spec
+    
     int Nx = r1curr->mesh->Nx; int Ny = r1curr->mesh->Ny; int BSZ = r1curr->mesh->BSZ;
     dim3 dimGrid = r1curr->mesh->dimGridp; dim3 dimBlock = r1curr->mesh->dimBlockp;
 
@@ -67,9 +69,10 @@ void r1lin_func(Qreal* IFr1h, Qreal* IFr1, Qreal* k_squared, Qreal Pe, Qreal cn,
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
+    double alpha1 = 1.0/Pe * (-1.0*k_squared[index] + cn*cn);
     if(i<Nxh && j<Ny){
-        IFr1h[index] = exp( (1.0/Pe*(-1.0*k_squared[index]+cn*cn) )*dt/2);
-        IFr1[index] = exp( (1.0/Pe*(-1.0*k_squared[index]+cn*cn) )*dt);
+        IFr1h[index] = exp( alpha1*dt/2);
+        IFr1[index] = exp( alpha1*dt);
     }
 }
 
@@ -79,9 +82,10 @@ void r2lin_func(Qreal* IFr2h, Qreal* IFr2, Qreal* k_squared, Qreal Pe, Qreal cn,
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
+    double alpha2 = 1.0/Pe * (-1.0*k_squared[index] + cn*cn);
     if(i<Nxh && j<Ny){
-        IFr2h[index] = exp( (1.0/Pe*(-1.0*k_squared[index]+cn*cn) )*dt/2);
-        IFr2[index] = exp( (1.0/Pe*(-1.0*k_squared[index]+cn*cn) )*dt);
+        IFr2h[index] = exp( alpha2*dt/2);
+        IFr2[index] = exp( alpha2*dt);
     }
 }
 
@@ -91,9 +95,12 @@ void wlin_func(Qreal* IFwh, Qreal* IFw, Qreal* k_squared, Qreal Re, Qreal cf, Qr
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
+    //L(w) = 1/Re*(Laplacian(w) -cf*cf*w)
+    // alpha0 = 1/Re*( -k_squared - cf*cf)
+    Qreal alpha0 = 1.0/Re * (-1.0*k_squared[index] - cf*cf);
     if(i<Nxh && j<Ny){
-        IFwh[index] = exp( (1.0/Re*(-1.0*k_squared[index])-1.0*cf*cf) *dt/2);
-        IFw[index] = exp( (1.0/Re*(-1.0*k_squared[index])-1.0*cf*cf) *dt);
+        IFwh[index] = exp( alpha0 *dt/2);
+        IFw[index] = exp( alpha0 *dt);
     }
 }
 
@@ -200,7 +207,7 @@ void p12nonl_func(Field *p12, Field *aux, Field *aux1, Field *r1, Field *r2, Fie
     // p12 spectral update finished
 }
 
-// p22 = -1*Cross(r1,r2) + Single(r2)
+// p21 = -1*Cross(r1,r2) + Single(r2)
 void p21nonl_func(Field *p21, Field *aux, Field *aux1, Field *r1, Field *r2, Field *S, 
                         Field *alpha, Qreal lambda, Qreal cn){
     int Nx = p21->mesh->Nx;
@@ -216,7 +223,6 @@ void p21nonl_func(Field *p21, Field *aux, Field *aux1, Field *r1, Field *r2, Fie
     FldAdd<<<dimGrid, dimBlock>>>(1.0, p21->phys, 1.0, aux->phys, p21->phys, Nx, Ny, BSZ);
     cuda_error_func( cudaDeviceSynchronize() );
     FwdTrans(p21->mesh, p21->phys, p21->spec);
-    cuda_error_func( cudaDeviceSynchronize() );
     // p21 spectral update finished
 }
 
@@ -301,11 +307,11 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     dim3 dimGrid = r2nonl->mesh->dimGridp; dim3 dimBlock = r2nonl->mesh->dimBlockp;
 
     // \lambda* S* 1/2* (D_x(v))
-    //aux.spec = \partial_x u
+    //aux.spec = (D_x(v))
     xDeriv(v->spec, aux->spec, r2nonl->mesh);
-    //aux.phys = \partial_x u
+    //aux.phys = (D_x(v))
     BwdTrans(aux->mesh, aux->spec, aux->phys);
-    // r2nonl.phys = \lambda*S(x,y) * aux = \lambda/2 *S(x,y) * D_x(u(x,y)) 
+    // r2nonl.phys = \lambda*S(x,y) * aux = \lambda/2 *S(x,y) * D_x(v(x,y)) 
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, S->phys, lambda*0.5, r2nonl->phys, Nx, Ny, BSZ);
     cuda_error_func( cudaPeekAtLastError() );
     cuda_error_func( cudaDeviceSynchronize() );
@@ -374,7 +380,7 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
 
 void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, Field *p21, Field *r1, Field *r2, Field *w, 
                         Field *u, Field *v, Field *alpha, Field *S, Qreal Re, Qreal Er, Qreal cn, Qreal lambda){
-            // wnonl = 1/ReEr * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))  
+            // wnonl = 1/(ReEr) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))  
             //         + (-1* u*D_x(w)) + (-1* v* D_y(w)) 
     Mesh* mesh = wnonl->mesh;
     int BSZ = mesh->BSZ;

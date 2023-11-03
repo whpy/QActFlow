@@ -30,7 +30,7 @@ public:
     dim3 dimGridsp;
     dim3 dimBlocksp;
     
-    Mesh(int BSZ, int pNx, int pNy, Qreal pLx, Qreal pLy);
+    Mesh(int pBSZ, int pNx, int pNy, Qreal pLx, Qreal pLy);
     ~Mesh(void);
 };
 

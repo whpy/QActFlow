@@ -81,7 +81,7 @@ int main(){
     double ln = 0.05;
     double lc = ln;
     double lf = sqrt(Rf);
-    double Ra = 0.025; 
+    double Ra = 0.20; 
 
 
     Qreal lambda = 0.1;
@@ -103,6 +103,11 @@ int main(){
     // *_new store the value of next time step 
 
     Mesh *mesh = new Mesh(BSZ, Nx, Ny, Lx, Ly);
+    cout << "Re = " << Re << endl;
+    cout << "Er = " << Er << endl;
+    cout << "Pe = " << Pe << endl;
+    cout << "cf = " << cf << endl;
+    cout << "Ra = " << Ra << endl;
     cout<< "Lx: " << mesh->Lx << " "<< "Ly: " << mesh->Ly << " " << endl;
     cout<< "Nx: " << mesh->Nx << " "<< "Ny: " << mesh->Ny << " " << endl;
     cout<< "dx: " << mesh->dx << " "<< "dy: " << mesh->dy << " " << endl;

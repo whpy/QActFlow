@@ -1,8 +1,8 @@
 #include <Basic/Mesh.h>
 
 Mesh::Mesh(int pBSZ, int pNx, int pNy, Qreal pLx, Qreal pLy):BSZ(pBSZ),
-Nx(pNx), Ny(pNy), Lx(pLx), Ly(pLy), Nxh(pNx/2+1),dx(2*M_PI/pNx), 
-dy(2*M_PI/pNy),alphax(2*M_PI/pLx),alphay(2*M_PI/pLy){
+Nx(pNx), Ny(pNy), Lx(pLx), Ly(pLy), Nxh(pNx/2+1),dx(pLx/pNx), 
+dy(pLx/pNy),alphax(2*M_PI/pLx),alphay(2*M_PI/pLy){
     cufft_error_func( cufftPlan2d( &(this->transf), Ny, Nx, CUFFT_D2Z ) );
     cufft_error_func( cufftPlan2d( &(this->inv_transf), Ny, Nx, CUFFT_Z2D ) );
 

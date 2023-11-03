@@ -93,7 +93,7 @@ int main(){
     // Qreal cf = lc/lf;
     Qreal cf = sqrt(Rf);
     Qreal Er = 0.1;
-    Qreal Re = 0.5;
+    Qreal Re = 0.25;
 
     // by specially choosing the scales, colin make the Pe equals to 1.0
     Qreal Pe = 1.0;
@@ -103,6 +103,10 @@ int main(){
     // *_new store the value of next time step 
 
     Mesh *mesh = new Mesh(BSZ, Nx, Ny, Lx, Ly);
+    cout << "Re = " << Re << endl;
+    cout << "Er = " << Er << endl;
+    cout << "Pe = " << Pe << endl;
+    cout << "cf = " << cf << endl;
     cout<< "Lx: " << mesh->Lx << " "<< "Ly: " << mesh->Ly << " " << endl;
     cout<< "Nx: " << mesh->Nx << " "<< "Ny: " << mesh->Ny << " " << endl;
     cout<< "dx: " << mesh->dx << " "<< "dy: " << mesh->dy << " " << endl;
