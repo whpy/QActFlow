@@ -74,35 +74,4 @@ T string2num(const string& str){
     return num;
 }
 
-void file_init(string filename, Field* f){
-    int Nx = f->mesh->Nx;
-    int Ny = f->mesh->Ny;
-
-    ifstream infile(filename);
-    vector<vector<string>> data;
-    string strline;
-    while(getline(infile, strline)){
-        stringstream ss(strline);
-        string str;
-        vector<string> dataline;
-
-        while(getline(ss, str, ',')){
-            dataline.push_back(str);
-        }
-        data.push_back(dataline);
-    }
-
-    if(data.size() != Ny || data[0].size() != Nx){
-        printf("READ_CSV_ERROR: size not match! \n");
-        return;
-    }
-    int index = 0;
-    for (int j=0; j<Ny; j++){
-        for (int i=0; i<Nx; i++){
-            index = j*Nx + i;
-            f->phys[index] = string2num<double>(data[j][i]);
-        }
-    }
-    infile.close();
-}
 #endif

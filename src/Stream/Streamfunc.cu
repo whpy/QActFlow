@@ -380,7 +380,7 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
 
 void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, Field *p21, Field *r1, Field *r2, Field *w, 
                         Field *u, Field *v, Field *alpha, Field *S, Qreal Re, Qreal Er, Qreal cn, Qreal lambda){
-            // wnonl = 1/(ReEr) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))  
+            // wnonl = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))  
             //         + (-1* u*D_x(w)) + (-1* v* D_y(w)) 
     Mesh* mesh = wnonl->mesh;
     int BSZ = mesh->BSZ;
@@ -412,7 +412,8 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21)
     SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, -1.0, aux->spec, 
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
-    // 1/(ReEr) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))
+    // wnonl = wnonl* 1.0/(Re*Er)
+    //       = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))
     SpecMul<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, 1.0/(Re*Er), wnonl->spec, Nxh, Ny, BSZ);
     
     // aux.spec = D_x(w)
@@ -423,8 +424,8 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     FldMul<<<mesh->dimGridp, mesh->dimBlockp>>>(aux->phys, u->phys, -1.0, aux->phys, Nx, Ny, BSZ);
     // forward to the spectral: aux.spec = Four((-1* u* D_x(w)))
     FwdTrans(aux->mesh, aux->phys, aux->spec);
-    // wnonl.spec = D^2_xx(p12) - 2*D^2_xy(p11) + aux.spec 
-    // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21) + (-1* u* D_x(w))
+    // wnonl.spec = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))  + aux.spec 
+    // = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21)) + (-1* u* D_x(w))
     SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, 1.0, aux->spec, 
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny,BSZ);
 
@@ -436,13 +437,14 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     FldMul<<<mesh->dimGridp, mesh->dimBlockp>>>(aux->phys, v->phys, -1., aux->phys, Nx, Ny, BSZ);
     // forward to the spectral: aux.spec = Four((-1* v* D_y(w)))
     FwdTrans(aux->mesh, aux->phys, aux->spec);
-    // wnonl.spec = D^2_xx(p12) - 2*D^2_xy(p11) + aux.spec 
-    // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21) + (-1* u* D_x(w)) + (-1* v* D_y(w))
+    // wnonl.spec = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21)) + (-1* u* D_x(w)) + aux.spec 
+    // = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21)) + (-1* u* D_x(w))+ (-1* v* D_y(w))
     SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1., wnonl->spec, 1., aux->spec, 
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
     
     // dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, mesh->cutoff, Nxh, Ny, BSZ);
     // cuda_error_func( cudaDeviceSynchronize() );
+    
     // here the wnonl has updated sucessfully
     
 }

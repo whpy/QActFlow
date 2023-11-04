@@ -5,66 +5,66 @@ using std::endl;
 
 
 
-void r1_init(Qreal *r1, Qreal dx, Qreal dy, int Nx, int Ny){
-    for (int j=0; j<Ny; j++){
-        for (int i=0; i<Nx; i++){
-            int index = i+j*Nx;
-            float x = dx*i;
-            float y = dy*j;
-            r1[index] = (float(rand())/RAND_MAX) - 0.50;
-        }
-    }
-}
+// void r1_init(Qreal *r1, Qreal dx, Qreal dy, int Nx, int Ny){
+//     for (int j=0; j<Ny; j++){
+//         for (int i=0; i<Nx; i++){
+//             int index = i+j*Nx;
+//             float x = dx*i;
+//             float y = dy*j;
+//             r1[index] = (float(rand())/RAND_MAX)-0.5;
+//         }
+//     }
+// }
 
-void r2_init(Qreal *r2, Qreal dx, Qreal dy, int Nx, int Ny){
-    for (int j=0; j<Ny; j++){
-        for (int i=0; i<Nx; i++){
-            int index = i+j*Nx;
-            float x = dx*i;
-            float y = dy*j;
-            r2[index] = (float(rand())/RAND_MAX) - 0.50;
-        }
-    }
-}
+// void r2_init(Qreal *r2, Qreal dx, Qreal dy, int Nx, int Ny){
+//     for (int j=0; j<Ny; j++){
+//         for (int i=0; i<Nx; i++){
+//             int index = i+j*Nx;
+//             float x = dx*i;
+//             float y = dy*j;
+//             r2[index] = (float(rand())/RAND_MAX)-0.5;
+//         }
+//     }
+// }
 
 
-void w_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny){
-    for (int j=0; j<Ny; j++){
-        for (int i=0; i<Nx; i++){
-            int index = i+j*Nx;
-            w[index] = 0.000;
-        }
-    }
-}
+// void w_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny){
+//     for (int j=0; j<Ny; j++){
+//         for (int i=0; i<Nx; i++){
+//             int index = i+j*Nx;
+//             w[index] = 0.000;
+//         }
+//     }
+// }
 
-void alpha_init(Qreal *alpha, Qreal Ra, Qreal dx, Qreal dy, int Nx, int Ny){
-    for (int j=0; j<Ny; j++){
-        for (int i=0; i<Nx; i++){
-            int index = i+j*Nx;
-            alpha[index] = (Ra);
-        }
-    }
-}
-void precompute_func(Field* r1, Field* r2, Field* w, InitType flag){
-    Mesh* mesh = r1->mesh;
-    int Nx = mesh->Nx; int Ny = mesh->Ny;
-    Qreal dx = mesh->dx; Qreal dy = mesh->dy;
+// void alpha_init(Qreal *alpha, Qreal Ra, Qreal dx, Qreal dy, int Nx, int Ny){
+//     for (int j=0; j<Ny; j++){
+//         for (int i=0; i<Nx; i++){
+//             int index = i+j*Nx;
+//             alpha[index] = (Ra);
+//         }
+//     }
+// }
+// void precompute_func(Field* r1, Field* r2, Field* w, InitType flag){
+//     Mesh* mesh = r1->mesh;
+//     int Nx = mesh->Nx; int Ny = mesh->Ny;
+//     Qreal dx = mesh->dx; Qreal dy = mesh->dy;
 
-    if (flag == Def_init){
-        r1_init(r1->phys, dx, dy, Nx, Ny);
-        r2_init(r2->phys, dx, dy, Nx, Ny);
-        w_init(w->phys, dx, dy, Nx, Ny);
-    }
-    else if (flag == File_init){
-        file_init("./init/r1_init.csv", r1);
-        file_init("./init/r2_init.csv", r2);
-        file_init("./init/w_init.csv", w);
-    }
+//     if (flag == Def_init){
+//         r1_init(r1->phys, dx, dy, Nx, Ny);
+//         r2_init(r2->phys, dx, dy, Nx, Ny);
+//         w_init(w->phys, dx, dy, Nx, Ny);
+//     }
+//     else if (flag == File_init){
+//         file_init("./init/r1_init.csv", r1);
+//         file_init("./init/r2_init.csv", r2);
+//         file_init("./init/w_init.csv", w);
+//     }
 
-    FwdTrans(mesh, r1->phys, r1->spec);
-    FwdTrans(mesh, r2->phys, r2->spec);
-    FwdTrans(mesh, w->phys, w->spec);
-}
+//     FwdTrans(mesh, r1->phys, r1->spec);
+//     FwdTrans(mesh, r2->phys, r2->spec);
+//     FwdTrans(mesh, w->phys, w->spec);
+// }
 
 
 int main(){
@@ -108,7 +108,7 @@ int main(){
     Qreal Er = 0.1;
     Qreal Re = 0.25;
 
-    // by specially choosing the scales, colin make the Pe equals to 1.0
+    // by specially choosing the scales, colin makes the Pe equals to 1.0
     Qreal Pe = 1.0;
     
     // main Fields to be solved
@@ -144,25 +144,21 @@ int main(){
 
     // field \alpha to be modified (scalar at the very first)
     Field *alpha = new Field(mesh);
-    // cout << "flag 1" << endl;
+
     //////////////////////// precomputation //////////////////////////
     r1lin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r1IFh, r1IF, r1_old->mesh->k_squared, Re, cn, dt, r1_old->mesh->Nxh, r1_old->mesh->Ny, r1_old->mesh->BSZ);
     r2lin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r2IFh, r2IF, r2_old->mesh->k_squared, Re, cn, dt, r2_old->mesh->Nxh, r2_old->mesh->Ny, r2_old->mesh->BSZ);
     wlin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wIFh, wIF, w_old->mesh->k_squared, Re, cf, dt, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
     
-    // cout << "flag 2" << endl;
     // the precomputation function also updates the spectrum of corresponding variables
-    precompute_func(r1_old, r2_old, w_old, Def_init);
+    precompute_func(r1_old, r2_old, w_old, Phy_init);
     alpha_init(alpha->phys, Ra, dx, dy, Nx, Ny);
     FwdTrans(mesh, alpha->phys, alpha->spec);
-    // cout << "flag 3" << endl;
     // prepare the referenced system
-    // cuda_error_func( cudaDeviceSynchronize() );
-    // cout << "flag5" << endl;
-    // field_visual(w_old,"wstart.csv");
-    // field_visual(r1_old,"r1start.csv");
-    // field_visual(r2_old,"r2start.csv");
-    // cout << "flag 4" << endl;
+    cuda_error_func( cudaDeviceSynchronize() );
+    field_visual(w_old,"wstart.csv");
+    field_visual(r1_old,"r1start.csv");
+    field_visual(r2_old,"r2start.csv");
     coord(*mesh);
     
     //////////////////////// time stepping //////////////////////////

@@ -8,7 +8,7 @@ close all;
 % end
 load("x.csv")
 load("y.csv")
-n = 8720
+n = 7100
 w = load(num2str(n)+"w.csv");
 
 r1 = load(num2str(n)+"r2.csv");

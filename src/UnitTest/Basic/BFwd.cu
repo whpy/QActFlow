@@ -48,8 +48,8 @@ void field_visual(Field *f, string name){
 int main(){
     int BSZ = 16;
     int Ns = 1000;
-    int Nx = 2048*16; // same as colin
-    int Ny = 2048*16;
+    int Nx = 512; // same as colin
+    int Ny = 512;
     int Nxh = Nx/2+1;
     Qreal Lx = 2*M_PI;
     Qreal Ly = 2*M_PI;
