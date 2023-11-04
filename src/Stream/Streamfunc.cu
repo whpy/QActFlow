@@ -412,7 +412,9 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21)
     SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, -1.0, aux->spec, 
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
-
+    // 1/(ReEr) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))
+    SpecMul<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, 1.0/(Re*Er), wnonl->spec, Nxh, Ny, BSZ);
+    
     // aux.spec = D_x(w)
     xDeriv(w->spec, aux->spec, aux->mesh);
     // aux.phys = D_x(w)
@@ -438,7 +440,7 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21) + (-1* u* D_x(w)) + (-1* v* D_y(w))
     SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1., wnonl->spec, 1., aux->spec, 
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
-    SpecMul<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, 1.0/(Re*Er), wnonl->spec, Nxh, Ny, BSZ);
+    
     // dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, mesh->cutoff, Nxh, Ny, BSZ);
     // cuda_error_func( cudaDeviceSynchronize() );
     // here the wnonl has updated sucessfully

@@ -31,14 +31,14 @@ void S_func(Field* r1, Field* r2, Field* S);
 
 void curr_func(Field *r1curr, Field *r2curr, Field *wcurr, Field *u, Field *v, Field *S);
 
-void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w, 
-                        Field *u, Field *v, Field *S, Qreal lambda, Qreal cn, Qreal Pe);
+void r1nonl_func(Field *r1nonl, Field * u, Field * v, 
+Field *S, Field *r1, Field *r2, Field *w, Field *h11, Qreal lambda, Field *aux);
 
-void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w, 
-                        Field *u, Field *v, Field *S, Qreal lambda, Qreal cn, Qreal Pe);
+void r2nonl_func(Field *r2nonl, Field * u, Field * v, 
+Field *S, Field *r1, Field *r2, Field *w, Field *h12, Qreal lambda, Field *aux);
 
-void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, Field *p21, Field *r1, Field *r2, Field *w, 
-                        Field *u, Field *v, Field *alpha, Field *S, Qreal Re, Qreal Er, Qreal cn, Qreal lambda);
+void wnonl_func(Field *wnonl, Field *h11,Field *h12, Field *p11, Field *p12, Field *p21, Field *r1, Field *r2, Field *w, 
+                        Field *u, Field *v, Field *Ra, Field *S, Qreal Re, Qreal Er, Qreal lambda, Field *aux, Field *aux1);
 
 // void pCross_func(Field *p,Field *aux, Field *r1, Field *r2);
 
@@ -48,6 +48,8 @@ void h11nonl_func(Field *h11, Field *r1, Field *S);
 
 void h12nonl_func(Field *h12, Field *r2, Field *S);
 
-
+void p11nonl_func(Field *p11, Field *r1, Field *h11, Field *Ra, Field *S, Qreal lambda, Field *aux); 
+void p12nonl_func(Field *p12, Field *r1, Field *r2, Field *h11, Field *h12, Field *Ra, Field *S, Qreal lambda, Field *aux); 
+void p21nonl_func(Field *p21, Field *r1, Field *r2, Field *h11, Field *h12, Field *Ra, Field *S, Qreal lambda, Field *aux); 
 
 #endif // end of __STREAMFUNCMODIFIED_CUH

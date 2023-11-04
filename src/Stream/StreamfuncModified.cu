@@ -112,6 +112,7 @@ inline void convect(Field *convf, Field *f, Field *u, Field *v, Field *aux){
     FldMul<<<mesh->dimGridp, mesh->dimBlockp>>>(aux->phys, v->phys, 1.0, aux->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
 
     FldAdd<<<mesh->dimGridp, mesh->dimBlockp>>>(1.0, aux->phys, 1.0, convf->phys, convf->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    FwdTrans(mesh, convf->phys, convf->spec);
 }
 // this function designed to assist calculation of the multiple
 // multiplication part of h calculation
@@ -135,8 +136,8 @@ void hcal_func(Field *r, Field *S, Field *h){
 }
 void curr_func(Field *r1curr, Field *r2curr, Field *wcurr, Field *u, Field *v, 
 Field *S, Field *h11, Field *h12){
-    // obtain the physical values of velocities and r_i
-    // we default that the accepted Field are all only update the spec
+    // obtain the physical values of velocities and r_i and h_{ij}
+    // it is default that the accepted Field are all only update the spec
     
     int Nx = r1curr->mesh->Nx; int Ny = r1curr->mesh->Ny; int BSZ = r1curr->mesh->BSZ;
     dim3 dimGrid = r1curr->mesh->dimGridp; dim3 dimBlock = r1curr->mesh->dimBlockp;
@@ -203,6 +204,67 @@ void wlin_func(Qreal* IFwh, Qreal* IFw, Qreal* k_squared, Qreal Re, Qreal cf, Qr
     }
 }
 
+void p11nonl_func(Field *p11, Field *r1, Field *h11, Field *Ra, Field *S, Qreal lambda, Field *aux){
+    // p11 = -lambda*S*h11 -Ra*r1
+    Mesh *mesh = p11->mesh;
+    // aux = -lambda*S*h11
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(S->phys, h11->phys, -1.0*lambda, aux->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p11 = -Ra*r1
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(Ra->phys, r1->phys, -1.0, p11->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p11 = p11 + aux = -lambda*S*h11 -Ra*r1
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p11->phys, p11->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+}
+void p12nonl_func(Field *p12, Field *r1, Field *r2, Field *h11, Field *h12, Field *Ra, Field *S, Qreal lambda, Field *aux){
+    // p12 = 2*(r2h11 - r1h12) - lambda*Sh12 - Ra*r2
+    Mesh *mesh = p12->mesh;
+    // aux = 2*r2*h11
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r2->phys, h11->phys, 2.0, aux->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p12 = -2*r1*h12
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r1->phys, h12->phys, -2.0, p12->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p12 = p12 + aux = 2*(r2h11 - r1h12)
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p12->phys, p12->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // aux = -lambda * S * h12
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(S->phys, h12->phys, -1.0*lambda, aux->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p12 = p12 + aux = 2*(r2h11 - r1h12) -lambda * S * h12
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p12->phys, p12->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // aux = -Ra*r2
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(Ra->phys, r2->phys, -1.0, aux->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p12 = p12 + aux = 2*(r2h11 - r1h12) -lambda * S * h12 -Ra*r2
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p12->phys, p12->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+} 
+void p21nonl_func(Field *p21, Field *r1, Field *r2, Field *h11, Field *h12, Field *Ra, Field *S, Qreal lambda, Field *aux){
+    // p21 = 2*(r1h12 - r2h11) - lambda*Sh12 - Ra*r2
+    Mesh *mesh = p21->mesh;
+    // aux = -2*r2*h11
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r2->phys, h11->phys, -2.0, aux->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p21 = 2*r1*h12
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r1->phys, h12->phys, 2.0, p21->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p21 = p21 + aux = 2*(r1h12 - r2h11)
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p21->phys, p21->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // aux = -lambda * S * h12
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(S->phys, h12->phys, -1.0*lambda, aux->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p21 = p21 + aux = 2*(r2h11 - r1h12) -lambda * S * h12
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p21->phys, p21->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // aux = -Ra*r2
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(Ra->phys, r2->phys, -1.0, aux->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+
+    // p21 = p21 + aux = 2*(r2h11 - r1h12) -lambda * S * h12 -Ra*r2
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p21->phys, p21->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+}
 
 void r1nonl_func(Field *r1nonl, Field * u, Field * v, 
 Field *S, Field *r1, Field *r2, Field *w, Field *h11, Qreal lambda, Field *aux){
@@ -244,83 +306,39 @@ Field *S, Field *r1, Field *r2, Field *w, Field *h12, Qreal lambda, Field *aux){
     mesh->Nx, mesh->Ny, mesh->BSZ);
 
     // r1nonl = r1nonl - convect(r1) = -1*convect(r1) + lambda*S*Dx(u)
-    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r2nonl->phys, -1.0, aux->phys, r1nonl->phys, 
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r2nonl->phys, -1.0, aux->phys, r2nonl->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
 
     // aux = -r2*w 
     FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r2->phys, w->phys, -1.0, aux->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
 
-    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r1nonl->phys, 1.0, aux->phys, r1nonl->phys, 
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
 
-    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r1nonl->phys, 1.0,h11->phys, r1nonl->phys, 
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r2nonl->phys, 1.0,h12->phys, r2nonl->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
 }
 
-void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, Field *p21, Field *r1, Field *r2, Field *w, 
-                        Field *u, Field *v, Field *alpha, Field *S, Qreal Re, Qreal Er, Qreal cn, Qreal lambda){
-            // wnonl = 1/(ReEr) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))  
-            //         + (-1* u*D_x(w)) + (-1* v* D_y(w)) 
+void wnonl_func(Field *wnonl, Field *h11, Field *h12, Field *p11, Field *p12, Field *p21, Field *r1, Field *r2, Field *w, 
+                        Field *u, Field *v, Field *Ra, Field *S, Qreal Re, Qreal Er, Qreal lambda, Field *aux, Field *aux1){
     Mesh* mesh = wnonl->mesh;
-    int BSZ = mesh->BSZ;
-    int Nx = mesh->Nx; int Ny = mesh->Ny; int Nxh = mesh->Nxh;
+    p11nonl_func(p11, r1, h11, Ra, S, lambda, aux);
+    p12nonl_func(p12, r1, r2, h11, h12, Ra, S, lambda, aux);
+    p21nonl_func(p21, r1, r2, h11, h12, Ra, S, lambda, aux);
 
-    p11nonl_func(p11, aux, aux1, r1, r2, S, alpha, lambda, cn); 
-    p12nonl_func(p12, aux, aux1, r1, r2, S, alpha, lambda, cn); 
-    p21nonl_func(p21, aux, aux1, r1, r2, S, alpha, lambda, cn); 
+    xxDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p12->spec, wnonl->spec, mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    xyDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p11->spec, aux->spec, mesh->kx, mesh->ky, mesh->Nxh, mesh->Ny, mesh->BSZ);
+
+    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,aux->spec,-2.0,wnonl->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
     
-    cuda_error_func( cudaDeviceSynchronize() );
-    // aux.spec = D_x(p12)
-    xDeriv(p12->spec, aux->spec, p12->mesh);
-    // wnonl.spec = D^2_xx(p12)
-    xDeriv(aux->spec, wnonl->spec, aux->mesh);
-    
-    // aux.spec = D_x(p11)
-    xDeriv(p11->spec, aux->spec, p11->mesh);
-    // aux.spec = D_y(aux.spec) = D^2_xy(p11)
-    yDeriv(aux->spec, aux->spec, aux->mesh);
-    // wnonl.spec = D^2_xx(p12) - 2*aux.spec = D^2_xx(p12) - 2*D^2_xy(p11)
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, -2.0, aux->spec, 
-    wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
+    yyDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p21->spec, aux->spec, mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
 
-    // aux.spec = D_y(p21)
-    yDeriv(p21->spec, aux->spec, p21->mesh);
-    // aux.spec = D^2_yy(p12)
-    yDeriv(aux->spec, aux->spec, aux->mesh);
-    // wnonl.spec = D^2_xx(p12) - 2*D^2_xy(p11) - aux.spec 
-    // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21)
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, -1.0, aux->spec, 
-    wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
+    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
 
-    // aux.spec = D_x(w)
-    xDeriv(w->spec, aux->spec, aux->mesh);
-    // aux.phys = D_x(w)
-    BwdTrans(aux->mesh, aux->spec, aux->phys);
-    // aux.phys = (-1* u* D_x(w))
-    FldMul<<<mesh->dimGridp, mesh->dimBlockp>>>(aux->phys, u->phys, -1.0, aux->phys, Nx, Ny, BSZ);
-    // forward to the spectral: aux.spec = Four((-1* u* D_x(w)))
-    FwdTrans(aux->mesh, aux->phys, aux->spec);
-    // wnonl.spec = D^2_xx(p12) - 2*D^2_xy(p11) + aux.spec 
-    // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21) + (-1* u* D_x(w))
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, 1.0, aux->spec, 
-    wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny,BSZ);
+    SpecMul(wnonl->spec, 1.0/(Re*Er), wnonl->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
 
-    // aux.spec = D_y(w)
-    yDeriv(w->spec, aux->spec, aux->mesh);
-    // aux.phys = D_y(w)
-    BwdTrans(aux->mesh, aux->spec, aux->phys);
-    // aux.phys = (-1* v* D_y(w))
-    FldMul<<<mesh->dimGridp, mesh->dimBlockp>>>(aux->phys, v->phys, -1., aux->phys, Nx, Ny, BSZ);
-    // forward to the spectral: aux.spec = Four((-1* v* D_y(w)))
-    FwdTrans(aux->mesh, aux->phys, aux->spec);
-    // wnonl.spec = D^2_xx(p12) - 2*D^2_xy(p11) + aux.spec 
-    // = D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21) + (-1* u* D_x(w)) + (-1* v* D_y(w))
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1., wnonl->spec, 1., aux->spec, 
-    wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
-    SpecMul<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, 1.0/(Re*Er), wnonl->spec, Nxh, Ny, BSZ);
-    // dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, mesh->cutoff, Nxh, Ny, BSZ);
-    // cuda_error_func( cudaDeviceSynchronize() );
-    // here the wnonl has updated sucessfully
-    
+    convect(aux, w, u, v, aux1);
+
+    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
 }
