@@ -11,7 +11,7 @@ for i = 0:2:200
     ut = load(num2str(i)+"u.csv");
     figure(i+1)
     plot(x(1,:),ut(1,:))
-    axis([0 2*pi -2 2])
+    axis([0 4*pi -2 2])
     title(i)
 end
 % visual(X0u,1,x,y)

@@ -31,8 +31,8 @@ dy(pLx/pNy),alphax(2*M_PI/pLx),alphay(2*M_PI/pLy){
     }
 
     // set up the cutoff
-    int lowNy = Ny/3;
-    int lowNx = Nx/3;
+    int lowNy = Ny/4;
+    int lowNx = Nx/4;
     for (int j=0; j<Ny; j++){
         for (int i=0; i<Nxh; i++){
             int c = i + j*Nxh;
@@ -40,10 +40,10 @@ dy(pLx/pNy),alphax(2*M_PI/pLx),alphay(2*M_PI/pLy){
             // -lowNy < ky <= lowNy && -lowNx < kx <= lowNx
             // (ky <= lowNy or Ny - ky > -lowNy) && (kx <= lowNx)
             if ( ( (j<= lowNy) || (Ny - j)< lowNy ) && (i<=lowNx) ){
-                cutoff[c] = 1.f;
+                cutoff[c] = 1.0;
             }
             else{
-                cutoff[c] = 0.f;
+                cutoff[c] = 0.0;
             }
         }
     }

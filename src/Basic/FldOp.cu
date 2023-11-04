@@ -196,8 +196,8 @@ void xDeriv(Qcomp *ft, Qcomp *dft, Mesh *mesh){
     dim3 dimGrid = mesh->dimGridp;
     dim3 dimBlock = mesh->dimBlockp;
     xDerivD<<<dimGrid, dimBlock>>>(ft,dft,mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
-    cuda_error_func( cudaPeekAtLastError() );
-	cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaPeekAtLastError() );
+	// cuda_error_func( cudaDeviceSynchronize() );
 }
 
 __global__ void yDerivD(Qcomp *ft, Qcomp *dft, Qreal* ky, int Nxh, int Ny, int BSZ){
@@ -212,8 +212,8 @@ void yDeriv(Qcomp *ft, Qcomp *dft, Mesh *mesh){
     dim3 dimGrid = mesh->dimGridp;
     dim3 dimBlock = mesh->dimBlockp;
     yDerivD<<<dimGrid, dimBlock>>>(ft,dft,mesh->ky,mesh->Nxh, mesh->Ny, mesh->BSZ);
-    cuda_error_func( cudaPeekAtLastError() );
-	cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaPeekAtLastError() );
+	// cuda_error_func( cudaDeviceSynchronize() );
 }
 
 __global__ 
@@ -229,5 +229,11 @@ void laplacian_funcD(Qcomp *ft, Qcomp *lft, Qreal* k_squared, int Nxh, int Ny, i
 void laplacian_func(Qcomp *ft, Qcomp *lft, Mesh* mesh){
     laplacian_funcD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(ft, lft, mesh->k_squared, 
     mesh->Nxh, mesh->Ny, mesh->BSZ);
+}
+void laplacian_func(Field *ft, Field *lft){
+    Mesh *mesh = ft->mesh;
+    laplacian_funcD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(ft->spec, lft->spec, mesh->k_squared, 
+    mesh->Nxh, mesh->Ny, mesh->BSZ);
+    BwdTrans(mesh, lft->spec, lft->phys);
 }
 

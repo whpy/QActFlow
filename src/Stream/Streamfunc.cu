@@ -183,7 +183,7 @@ void p11nonl_func(Field *p11, Field* aux, Field* aux1, Field* r1, Field *r2, Fie
     // our strategy is firstly update the phys then finally update the spectral
     // p11.phys = \lambda* S(cn^2*(S^2-1)*r1 - \Delta r1) + \alpha*r1
     pSingle_func(p11, aux, r1, S, alpha, lambda,cn);
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaDeviceSynchronize() );
     FwdTrans(p11->mesh, p11->phys, p11->spec);
     // p11 spectral update finished
 }
@@ -201,9 +201,9 @@ void p12nonl_func(Field *p12, Field *aux, Field *aux1, Field *r1, Field *r2, Fie
     pSingle_func(aux, aux1, r2, S, alpha, lambda,cn);
     // p12.phys = p12.phys + aux.phys = Cross(r1,r2) + Single(r2)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, p12->phys, 1.0, aux->phys, p12->phys, Nx, Ny, BSZ);
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaDeviceSynchronize() );
     FwdTrans(p12->mesh, p12->phys, p12->spec);
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaDeviceSynchronize() );
     // p12 spectral update finished
 }
 
@@ -221,7 +221,7 @@ void p21nonl_func(Field *p21, Field *aux, Field *aux1, Field *r1, Field *r2, Fie
     pSingle_func(aux, aux1, r2, S, alpha, lambda, cn);
     // p21.phys = p21.phys + aux.phys = Cross(r2,r1) + Single(r2)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, p21->phys, 1.0, aux->phys, p21->phys, Nx, Ny, BSZ);
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaDeviceSynchronize() );
     FwdTrans(p21->mesh, p21->phys, p21->spec);
     // p21 spectral update finished
 }
@@ -244,14 +244,14 @@ void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w,
     BwdTrans(r1nonl->mesh, aux->spec, aux->phys);
     // r1nonl.phys = \lambda*S(x,y) * aux = \lambda*S(x,y) * \partial_x u(x,y) 
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, S->phys, lambda, r1nonl->phys, Nx, Ny, BSZ);
-    cuda_error_func( cudaPeekAtLastError() );
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaPeekAtLastError() );
+    // cuda_error_func( cudaDeviceSynchronize() );
 
     // (-\omega_z* r2)
     // aux.phys = -1*\omega*r2
     FldMul<<<dimGrid, dimBlock>>>(w->phys, r2->phys, -1.0, aux->phys, Nx, Ny, BSZ);
-    cuda_error_func( cudaPeekAtLastError() );
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaPeekAtLastError() );
+    // cuda_error_func( cudaDeviceSynchronize() );
     // r1nonl.phys = \lambda*S(x,y) * \partial_x u(x,y) + (-\omega_z* r2)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r1nonl->phys, 1.0, aux->phys, r1nonl->phys, Nx, Ny, BSZ);
 
@@ -262,8 +262,8 @@ void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w,
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, r1->phys, 1.0, aux->phys, Nx, Ny, BSZ);
     // r1nonl.phys = \lambda S\frac{\partial u}{\partial x}  + (-\omega_z* r2) + (-1*cn^2/Pe*S*S*r1)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r1nonl->phys, 1.0, aux->phys, r1nonl->phys, Nx, Ny, BSZ);
-    cuda_error_func( cudaPeekAtLastError() );
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaPeekAtLastError() );
+    // cuda_error_func( cudaDeviceSynchronize() );
 
     //(-u*D_x(r1))
     // aux.spec = i*kx*r1
@@ -313,8 +313,8 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     BwdTrans(aux->mesh, aux->spec, aux->phys);
     // r2nonl.phys = \lambda*S(x,y) * aux = \lambda/2 *S(x,y) * D_x(v(x,y)) 
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, S->phys, lambda*0.5, r2nonl->phys, Nx, Ny, BSZ);
-    cuda_error_func( cudaPeekAtLastError() );
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaPeekAtLastError() );
+    // cuda_error_func( cudaDeviceSynchronize() );
 
     // \lambda* S* 1/2 *(D_y(u))
     //aux.spec = D_y(u)
@@ -325,14 +325,14 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, S->phys, lambda*0.5, aux->phys, Nx, Ny, BSZ);
     // r2nonl.phys = r2nonl.phys + aux.phys = 1/2*\lambda *S(x,y) *D_x(v(x,y)) + 1/2*\lambda *S(x,y) * D_y(u(x,y)) 
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, Nx, Ny, BSZ);
-    cuda_error_func( cudaPeekAtLastError() );
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaPeekAtLastError() );
+    // cuda_error_func( cudaDeviceSynchronize() );
 
     // (\omega_z* r1)
     // aux.phys = 1.0* \omega*r1
     FldMul<<<dimGrid, dimBlock>>>(w->phys, r1->phys, 1.0, aux->phys, Nx, Ny, BSZ);
-    cuda_error_func( cudaPeekAtLastError() );
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaPeekAtLastError() );
+    // cuda_error_func( cudaDeviceSynchronize() );
     // r2nonl.phys = (\lambda/2 *S(x,y) *D_x(u(x,y))) + (\lambda/2 *S(x,y) * D_x(u(x,y))) + (\omega_z* r1)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, Nx, Ny, BSZ);
 
@@ -343,8 +343,8 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, r2->phys, 1.0, aux->phys, Nx, Ny, BSZ);
     // r1nonl.phys = (\lambda/2 *S(x,y) *D_x(u(x,y))) + (\lambda/2 *S(x,y) * D_x(u(x,y))) + (\omega_z* r2) + (-1*cn^2/Pe*S*S*r2)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, Nx, Ny, BSZ);
-    cuda_error_func( cudaPeekAtLastError() );
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaPeekAtLastError() );
+    // cuda_error_func( cudaDeviceSynchronize() );
 
     //(-u*D_x(r2))
     // aux.spec = i*kx*r2
@@ -390,7 +390,7 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     p12nonl_func(p12, aux, aux1, r1, r2, S, alpha, lambda, cn); 
     p21nonl_func(p21, aux, aux1, r1, r2, S, alpha, lambda, cn); 
     
-    cuda_error_func( cudaDeviceSynchronize() );
+    // cuda_error_func( cudaDeviceSynchronize() );
     // aux.spec = D_x(p12)
     xDeriv(p12->spec, aux->spec, p12->mesh);
     // wnonl.spec = D^2_xx(p12)

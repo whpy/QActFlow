@@ -112,13 +112,13 @@ void coord(Mesh &mesh){
 int main(){
     int BSZ = 16;
     int Ns = 201;
-    int Nx = 512; // same as colin
+    int Nx = 512*2; // same as colin
     int Ny = 16;
     int Nxh = Nx/2+1;
-    Qreal Lx = 2*M_PI;
-    Qreal Ly = 2*M_PI;
-    Qreal dx = 2*M_PI/Nx;
-    Qreal dy = 2*M_PI/Ny;
+    Qreal Lx = 4*M_PI;
+    Qreal Ly = 4*M_PI;
+    Qreal dx = Lx/Nx;
+    Qreal dy = Ly/Ny;
     Qreal dt = 0.02; // same as colin
     Qreal a = 1.0;
 
