@@ -1,7 +1,8 @@
 #include <Basic/QActFlow.h>
 #include <Basic/FldOp.cuh>
 #include <Basic/Field.h>
-#include <Stream/StreamfuncModified.cu>
+#include <Stream/StreamfuncModified.cuh>
+#include <TimeIntegration/RK4.cuh>
 #include <iostream>
 
 using namespace std;
@@ -19,10 +20,20 @@ void PhiinitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = sin(x+y);
+        phys[index] = sin(2*x);
     }
 }
-
+__global__
+void RainitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+    int i = blockIdx.x * BSZ + threadIdx.x;
+    int j = blockIdx.y * BSZ + threadIdx.y;
+    int index = i + j*Nx;
+    Qreal x = i*dx;
+    Qreal y = j*dy;
+    if (i<Nx && j<Ny){
+        phys[index] = 0.2;
+    }
+}
 __global__
 void rinitD(Qreal* r1, Qreal* r2, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
@@ -31,8 +42,8 @@ void rinitD(Qreal* r1, Qreal* r2, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        r1[index] = sin(x);
-        r2[index] = cos(x);
+        r1[index] = cos(2.0*x);
+        r2[index] = sin(2.0*x);
     }
 }
 
@@ -57,9 +68,11 @@ void wexactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = -2.0*sin(x+y);
+        phys[index] = -5.0*sin(2*x+y);
     }
 }
+
+
 
 __global__
 void uexactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
@@ -70,7 +83,7 @@ void uexactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = -cos(x+y);
+        phys[index] = -1*cos(2*x+y);
     }
 }
 __global__
@@ -82,12 +95,12 @@ void vexactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = cos(x+y);
+        phys[index] = 2*cos(2*x+y);
     }
 }
 
 __global__
-void NL1exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+void NL1exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = i + j*Nx;
@@ -95,13 +108,20 @@ void NL1exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = 0.5*( cos(y) + cos(2*x+y) +
-        4.0*(lambda+cos(x))*sin(x+y) - 8.0*sin(x)*cn*cn/Pe );
+        // phys[index] = -5*cos(x+y)+
+        // cos(2*x+y)*sin(x+y)+
+        // 5.0*(0.08+sin(x+y))*sin(2*x+y);
+        // phys[index] = -5*cos(x+y) - 
+        // cos(3*x+4*y)*sin(x+y) + 25.0*(0.096 + sin(x+y))*sin(3*x+4*y);
+        // phys[index] = -8.0*cos(2.0*x+y) - 
+        // 5.0*cos(3.0*x+4.0*y)*sin(2.0*x+y)+
+        // 25.0*(0.096+sin(2.0*x+y))*sin(3.0*x+4.0*y);
+        phys[index] = -7.0*cos(2.0*x) + 4.0*sin(2*x)*sin(2*x);
     }
 }
 
 __global__
-void NL2exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+void NL2exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = i + j*Nx;
@@ -109,37 +129,31 @@ void NL2exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = -1.0*sin(x)*( cos(x+y) + 2.0*sin(x+y) ) - 4*cos(x)*cn*cn/Pe;
+        // phys[index] = -5.0*sin(x+y)-
+        // 0.3*sin(2.0*x+y)-
+        // cos(x+y)*( cos(2*x+y)+5.0*sin(2*x+y) );
+        // phys[index] = -5.0*sin(x+y) + 
+        // cos(x+y)*(cos(3*x+4*y) - 25.0*sin(3*x+4*y)) + 0.7*sin(3*x+4*y);
+        // phys[index] = -8.0*sin(2.0*x+y) + 
+        // 5.0*cos(2*x+y)*(cos(3.0*x+4.0*y) - 5.0*sin(3.0*x+4.0*y)) + 0.7*sin(3.0*x+4.0*y);
+        phys[index] = -4.0*(1.85+cos(2.0*x))*sin(2.0*x);
     }
 }
 
 __global__
-void NL0exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal Er, Qreal Re, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+void NL0exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = i + j*Nx;
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = -1.0*cos(x)*(1+2*lambda+6*lambda*cn*cn)/(Er*Re);
+        phys[index] = -960*cos(2.0*x);
     }
 }
 
 __global__
-void Single1exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
-    int i = blockIdx.x * BSZ + threadIdx.x;
-    int j = blockIdx.y * BSZ + threadIdx.y;
-    int index = i + j*Nx;
-    Qreal x = i*dx;
-    Qreal y = j*dy;
-    // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
-    if (i<Nx && j<Ny){
-        phys[index] = sin(x)*(1+2.0*lambda + 6.0*lambda*cn*cn);
-    }
-}
-
-__global__
-void Single2exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+void p11exact(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = i + j*Nx;
@@ -147,12 +161,12 @@ void Single2exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, 
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = cos(x)*(1+2.0*lambda + 6.0*lambda*cn*cn);
+        phys[index] = cos(2*x+y);
     }
 }
 
 __global__
-void crossexact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+void p12exact(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = i + j*Nx;
@@ -160,44 +174,11 @@ void crossexact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qr
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = 0.0;
+        phys[index] = -4*cos(2*x+y);
     }
 }
-
-inline void init(Field* phi, Field* wa, Field* ua, Field* va, Field* r1, Field* r2, 
-Field* Sa, Field* single1a, Field* single2a, Field* NL0a, Field* NL1a, Field* NL2a, Field* crossa, 
-Qreal lambda, Qreal cn, Qreal Pe, Qreal Er, Qreal Re){
-    Mesh* mesh = r1->mesh;
-    int Nx = mesh->Nx; int Ny = mesh->Ny; int BSZ = mesh->BSZ; 
-    Qreal dx = mesh->dx; Qreal dy = mesh->dy;
-    dim3 dimGrid = mesh->dimGridp; dim3 dimBlock = mesh->dimBlockp;
-
-    PhiinitD<<<dimGrid, dimBlock>>>(phi->phys, Nx, Ny, BSZ, dx, dy);
-    rinitD<<<dimGrid, dimBlock>>>(r1->phys, r2->phys, Nx, Ny, BSZ, dx, dy);
-    SexactD<<<dimGrid, dimBlock>>>(Sa->phys, Nx, Ny, BSZ, dx, dy);
-    wexactD<<<dimGrid, dimBlock>>>(wa->phys, Nx, Ny, BSZ, dx, dy);
-    uexactD<<<dimGrid, dimBlock>>>(ua->phys, Nx, Ny, BSZ, dx, dy);
-    vexactD<<<dimGrid, dimBlock>>>(va->phys, Nx, Ny, BSZ, dx, dy);
-    Single1exact<<<dimGrid, dimBlock>>>(single1a->phys, lambda, cn, Nx, Ny, BSZ, dx, dy);
-    Single2exact<<<dimGrid, dimBlock>>>(single2a->phys, lambda, cn, Nx, Ny, BSZ, dx, dy);
-    NL0exact<<<dimGrid, dimBlock>>>(NL0a->phys, lambda, Pe, Er, Re, cn, Nx, Ny, BSZ, dx, dy);
-    NL1exact<<<dimGrid, dimBlock>>>(NL1a->phys, lambda, Pe, cn, Nx, Ny, BSZ, dx, dy);
-    NL2exact<<<dimGrid, dimBlock>>>(NL2a->phys, lambda, Pe, cn, Nx, Ny, BSZ, dx, dy);
-    crossexact<<<dimGrid, dimBlock>>>(crossa->phys, lambda, cn, Nx, Ny, BSZ, dx, dy);
-    // update the spectral
-    FwdTrans(mesh, r1->phys, r1->spec);
-    FwdTrans(mesh, r2->phys, r2->spec);
-
-    // we want to test the currfunc so that we set the physics zero
-    FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(r1->phys, 0.0, mesh->Nx, mesh->Ny, mesh->BSZ);
-    FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(r2->phys, 0.0, mesh->Nx, mesh->Ny, mesh->BSZ);
-    
-    // update the spectral of vorticity
-    FwdTrans(mesh, phi->phys, phi->spec);
-}
-
 __global__
-void p11exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+void p21exact(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = i + j*Nx;
@@ -205,12 +186,12 @@ void p11exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qrea
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = sin(x)*(1+2*lambda+6*lambda*cn*cn);
+        phys[index] = 0.8*sin(x+y);
     }
 }
 
 __global__
-void p12exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+void h11exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = i + j*Nx;
@@ -218,12 +199,12 @@ void p12exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qrea
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = cos(x)*(1+2*lambda+6*lambda*cn*cn);
+        phys[index] = -5.0*cos(x+y);
     }
 }
 
 __global__
-void p21exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+void h12exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = i + j*Nx;
@@ -231,9 +212,11 @@ void p21exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qrea
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = cos(x)*(1+2*lambda+6*lambda*cn*cn);
+        phys[index] = -5.0*sin(x+y);
     }
 }
+
+
 void field_visual(Field *f, string name){
     Mesh* mesh = f->mesh;
     ofstream fval;
@@ -246,6 +229,45 @@ void field_visual(Field *f, string name){
         fval << endl;
     }
     fval.close();
+}
+
+inline void init(Field *Ra, Field* Phi, Field *r1, Field *r2,Field* we, Field* ue, Field* ve, Field* h11e, Field* h12e, 
+Field* wnonle, Field* r1nonle, Field* r2nonle){
+    Mesh* mesh = we->mesh;
+    int Nx = mesh->Nx;
+    int Ny = mesh->Ny;
+    Qreal dx = mesh->dx;
+    Qreal dy = mesh->dy;
+    int BSZ = mesh->BSZ;
+    dim3 dimGrid = mesh->dimGridp;
+    dim3 dimBlock = mesh->dimBlockp;
+    PhiinitD<<<dimGrid, dimBlock>>>(Phi->phys, Nx, Ny, BSZ, dx,dy);
+    RainitD<<<dimGrid, dimBlock>>>(Ra->phys, Nx,Ny, BSZ, dx,dy);
+    rinitD<<<dimGrid, dimBlock>>>(r1->phys, r2->phys, Nx, Ny, BSZ, dx, dy);
+    wexactD<<<dimGrid, dimBlock>>>(we->phys, Nx, Ny, BSZ,dx, dy);
+    uexactD<<<dimGrid, dimBlock>>>(ue->phys, Nx, Ny, BSZ, dx, dy);
+    vexactD<<<dimGrid, dimBlock>>>(ve->phys, Nx, Ny, BSZ, dx, dy);
+    h11exactD<<<dimGrid, dimBlock>>>(h11e->phys, Nx, Ny, BSZ, dx, dy);
+    h12exactD<<<dimGrid, dimBlock>>>(h12e->phys, Nx, Ny, BSZ, dx, dy);
+    NL0exactD<<<dimGrid, dimBlock>>>(wnonle->phys, Nx, Ny, BSZ, dx, dy);
+    NL1exactD<<<dimGrid, dimBlock>>>(r1nonle->phys, Nx, Ny, BSZ, dx, dy);
+    NL2exactD<<<dimGrid, dimBlock>>>(r2nonle->phys, Nx, Ny, BSZ, dx, dy);
+
+    FwdTrans(mesh, r1->phys, r1->spec);
+    FwdTrans(mesh, r2->phys, r2->spec);
+    cuda_error_func(cudaDeviceSynchronize());
+    field_visual(r1,"r1.csv");
+    field_visual(r2,"r2.csv");
+    field_visual(Ra,"Ra.csv");
+    field_visual(we,"wexact.csv");
+    field_visual(ue,"uexact.csv");
+    field_visual(ve,"vexact.csv");
+    field_visual(h11e,"h11exact.csv");
+    field_visual(h12e,"h12exact.csv");
+    field_visual(wnonle,"wnlexact.csv");
+    field_visual(r1nonle,"r1nlexact.csv");
+    field_visual(r2nonle,"r2nlexact.csv");
+
 }
 
 void print_spec(Field* f){
@@ -297,172 +319,221 @@ void coord(Mesh &mesh){
 // lap(r2) = 1/(2*pi)*(-1)*(sin(x+y) + y*cos(x+y))
 // the cross term should be 2*(r2*Lap(r1) - r1*Lap(r2)) = 
 int main(){
+     // computation parameters
     int BSZ = 16;
-    int Ns = 1000;
-    int Nx = 512*3/2; // same as colin
-    int Ny = Nx;
+    int Ns = 20000;
+    int Nx = 512; // same as colin
+    int Ny = 512;
     int Nxh = Nx/2+1;
-    Qreal Lx = 2*M_PI;
-    Qreal Ly = 2*M_PI;
-    Qreal dx = 2*M_PI/Nx;
-    Qreal dy = 2*M_PI/Ny;
-    Qreal lambda = 0.5;
-    Qreal cn = 0.1;
-    Qreal Pe = 0.3;
-    Qreal Re = 5.0;
-    Qreal Er = 6.0;
-    Qreal dt = 0.05; // same as colin
-    Qreal a = 1.0;
+    Qreal Lx =  33 * 2 *M_PI;
+    Qreal Ly = Lx;
+    Qreal dx = Lx/Nx;
+    Qreal dy = dx;
+    Qreal dt = 0.001; // same as colin
 
-/////////// 2 ////////////
-// we previously have verified the validity of laplacian and vel_func.
-// in this file we test the func about the Q tensor (components, r1, r2) and 
-// the intermediate components p (p11, p12, p21)
+    // non-dimensional number
+    Qreal Re = 0.1;
+    Qreal Er = 0.1;
+    Qreal Rf = 7.5 * 0.00001;
+    Qreal lambda = 0.1;
+
+    // main Fields to be solved
+    // *_curr act as an intermediate while RK4 timeintegration
+    // *_new store the value of next time step 
+
     Mesh *mesh = new Mesh(BSZ, Nx, Ny, Lx, Ly);
-    Field* phi = new Field(mesh);
-    Field* w = new Field(mesh); Field* wa = new Field(mesh);
-    Field* u = new Field(mesh); Field* ua = new Field(mesh);
-    Field* v = new Field(mesh); Field* va = new Field(mesh);
+    cout << "Re = " << Re << endl;
+    cout << "Er = " << Er << endl;
+    cout << "lambda = " << lambda << endl;
+    cout << "Rf = " << Rf << endl;
+    cout<< "Lx: " << mesh->Lx << " "<< "Ly: " << mesh->Ly << " " << endl;
+    cout<< "Nx: " << mesh->Nx << " "<< "Ny: " << mesh->Ny << " " << endl;
+    cout<< "dx: " << mesh->dx << " "<< "dy: " << mesh->dy << " " << endl;
+    cout<< "Nx*dx: " << mesh->Nx*mesh->dx << " "<< "Ny*dy: " << mesh->Ny*mesh->dy << " " << endl;
+    Field *w_old = new Field(mesh); Field *w_curr = new Field(mesh); Field *w_new = new Field(mesh);
+    Field *r1_old = new Field(mesh); Field *r1_curr = new Field(mesh); Field *r1_new = new Field(mesh);
+    Field *r2_old = new Field(mesh); Field *r2_curr = new Field(mesh); Field *r2_new = new Field(mesh);
 
-    Field *r1 = new Field(mesh); Field *r2 = new Field(mesh);
-    Field *S = new Field(mesh); Field *Sa = new Field(mesh);
+     // linear factors
+    Qreal *wIF, *wIFh; Qreal *r1IF, *r1IFh; Qreal *r2IF, *r2IFh;
+    cudaMallocManaged(&wIF, sizeof(Qreal)*Nxh*Ny); cudaMallocManaged(&wIFh, sizeof(Qreal)*Nxh*Ny);
+    cudaMallocManaged(&r1IF, sizeof(Qreal)*Nxh*Ny); cudaMallocManaged(&r1IFh, sizeof(Qreal)*Nxh*Ny);
+    cudaMallocManaged(&r2IF, sizeof(Qreal)*Nxh*Ny); cudaMallocManaged(&r2IFh, sizeof(Qreal)*Nxh*Ny);
+
+    // intermediate fields
+    //nonlinear terms
+    Field *wnonl = new Field(mesh); Field *r1nonl = new Field(mesh); Field *r2nonl = new Field(mesh);
+    // velocity and S
+    Field *u = new Field(mesh); Field *v = new Field(mesh); Field *S = new Field(mesh);
+    // H tensor
+    Field *h11 = new Field(mesh); Field *h12 = new Field(mesh);
+    // the stress tensor
+    Field *p11 = new Field(mesh); Field *p12 = new Field(mesh); Field* p21 = new Field(mesh);
+    // auxiliary fields
+    Field *aux = new Field(mesh); Field *aux1 = new Field(mesh); 
+
+    // field \alpha to be modified (scalar at the very first)
+    Field *Ra = new Field(mesh);
+// /////////// 2 ////////////
+// // we previously have verified the validity of laplacian and vel_func.
+// // in this file we test the func about the Q tensor (components, r1, r2) and 
+// // the intermediate components p (p11, p12, p21)
+//     Mesh *mesh = new Mesh(BSZ, Nx, Ny, Lx, Ly);
+//     Field* phi = new Field(mesh);
+//     Field* w = new Field(mesh); Field* wa = new Field(mesh);
+//     Field* u = new Field(mesh); Field* ua = new Field(mesh);
+//     Field* v = new Field(mesh); Field* va = new Field(mesh);
+
+//     Field *r1 = new Field(mesh); Field *r2 = new Field(mesh);
+//     Field *S = new Field(mesh); Field *Sa = new Field(mesh);
     
-    Field *single1 = new Field(mesh); Field *single1a = new Field(mesh);
-    Field *single2 = new Field(mesh); Field *single2a = new Field(mesh);
-    Field *cross1 = new Field(mesh); Field *cross2 = new Field(mesh); 
-    Field *crossa = new Field(mesh);
+//     Field *single1 = new Field(mesh); Field *single1a = new Field(mesh);
+//     Field *single2 = new Field(mesh); Field *single2a = new Field(mesh);
+//     Field *cross1 = new Field(mesh); Field *cross2 = new Field(mesh); 
+//     Field *crossa = new Field(mesh);
 
-    Field *p11 = new Field(mesh); Field *p11a = new Field(mesh);
-    Field *p12 = new Field(mesh); Field *p12a = new Field(mesh);
-    Field *p21 = new Field(mesh); Field *p21a = new Field(mesh);
+//     Field *p11 = new Field(mesh); Field *p11a = new Field(mesh);
+//     Field *p12 = new Field(mesh); Field *p12a = new Field(mesh);
+//     Field *p21 = new Field(mesh); Field *p21a = new Field(mesh);
 
-    Field *nl0 = new Field(mesh); Field *nl0a = new Field(mesh);
-    Field *nl1 = new Field(mesh); Field *nl1a = new Field(mesh);
-    Field *nl2 = new Field(mesh); Field *nl2a = new Field(mesh);
-    Field *alpha = new Field(mesh);
+//     Field *nl0 = new Field(mesh); Field *nl0a = new Field(mesh);
+//     Field *nl1 = new Field(mesh); Field *nl1a = new Field(mesh);
+//     Field *nl2 = new Field(mesh); Field *nl2a = new Field(mesh);
+//     Field *alpha = new Field(mesh);
 
     // aux is the abbreviation of auxiliary, where only act as intermediate values
     // to assist computation. So we should guarantee that it doesnt undertake any 
     // long term memory work.
-    Field *aux = new Field(mesh); Field *aux1 = new Field(mesh);
+    // Field *aux = new Field(mesh); Field *aux1 = new Field(mesh);
     // Field* phi = new Field(mesh);
     // Field* w = new Field(mesh); Field* wa = new Field(mesh);
     // Field* u = new Field(mesh); Field* ua = new Field(mesh);
     // Field* v = new Field(mesh); Field* va = new Field(mesh);
 
+    Field *we = new Field(mesh); Field *ue = new Field(mesh); Field *ve = new Field(mesh); 
+    Field *h11e = new Field(mesh); Field *h12e = new Field(mesh); Field *wnonle = new Field(mesh); 
+    Field *p11e = new Field(mesh); Field *p12e = new Field(mesh); Field *p21e = new Field(mesh);
+    Field *r1nonle = new Field(mesh); Field *r2nonle = new Field(mesh);
+    Field *phi = new Field(mesh);
     coord(*mesh);
-    init(phi, wa, ua, va, r1, r2, Sa, single1a, single2a, nl0a, nl1a, nl2a, crossa, 
-    lambda, cn, Pe, Er, Re);
-    FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(alpha->phys, 1.0, Nx, Ny, BSZ);
-    cuda_error_func( cudaDeviceSynchronize() );
-    field_visual(phi, "phi.csv");
-    field_visual(wa, "wa.csv");
-    field_visual(ua, "ua.csv");
-    field_visual(va, "va.csv");
-    field_visual(alpha, "alpha.csv");
-
-    field_visual(r1, "r10.csv");
-    field_visual(r2, "r20.csv");
-    field_visual(Sa, "Sa.csv");
-
-    field_visual(single1a, "single1a.csv");
-    field_visual(single2a, "single2a.csv");
-    field_visual(nl0a, "nl0a.csv");
-    field_visual(nl1a, "nl1a.csv");
-    field_visual(nl2a, "nl2a.csv");
-    
+    init(Ra, phi, r1_old, r2_old, we,ue,ve, h11e,h12e,wnonle,r1nonle,r2nonle);
+//     FldSet<<<mesh->dimGridp, mesh->dimBlockp>>>(alpha->phys, 1.0, Nx, Ny, BSZ);
+    p11exact<<<mesh->dimGridp,mesh->dimBlockp>>>(p11e->phys, Nx, Ny, BSZ, dx, dy);
+    p12exact<<<mesh->dimGridp,mesh->dimBlockp>>>(p12e->phys, Nx, Ny, BSZ, dx, dy);
+    p21exact<<<mesh->dimGridp,mesh->dimBlockp>>>(p21e->phys, Nx, Ny, BSZ, dx, dy);
     // evaluate the spectral of w: Laplacian( Four(\phi) )
-    laplacian_func(phi->spec, w->spec, mesh);
+    FwdTrans(mesh,phi->phys, phi->spec);
+    laplacian_func(phi->spec, w_old->spec, mesh);
     // switch back
-    BwdTrans(mesh, w->spec, w->phys);
-    // evaluate the S; the velocity u, v; the phys of r1, r2; 
-    curr_func(r1, r2, w, u, v, S);
-    // evaluate the S
-    // S_func(r1, r2, S);
-    // S_funcD<<<mesh->dimGridp, mesh->dimBlockp>>>(r1->phys, r2->phys, S->phys, Nx, Ny, BSZ);
+    BwdTrans(mesh, w_old->spec, w_old->phys);
+    
     cuda_error_func( cudaDeviceSynchronize() );
-    field_visual(r1, "r1.csv");
-    field_visual(r2, "r2.csv");
-    field_visual(w, "w.csv");
-    field_visual(u, "u.csv");
-    field_visual(v, "v.csv");
-    field_visual(S, "S.csv");
-//////////////////// Sfunc tested //////////////////
+    field_visual(w_old, "w.csv");
+    field_visual(p11e, "p11e.csv");
+    field_visual(p12e, "p12e.csv");
+    field_visual(p21e, "p21e.csv");
+    field_visual(wnonl, "wnonl_start.csv");
+    field_visual(r1nonl, "r1nonl_start.csv");
+    field_visual(r2nonl, "r2nonl_start.csv");
+    
+//     // evaluate the S; the velocity u, v; the phys of r1, r2; 
 
-//////////////////// crossfunc test ///////////////
-// Cross(r1,r2) = 2*(r2*\Delta(r1) - r1*\Delta(r2))
-//  we here tested different functions where r1 = cos(2x+y), r2 = sin(x+3y) 
-// for cross terms, where the exact value should be: 10cos(2x+y)sin(x+3y).
+// //////////////////// Sfunc tested //////////////////
 
-    pCross_func(cross1, aux1, r1, r2);
+// //////////////////// crossfunc test ///////////////
+
+// //////////////////// cross and single term tested //////////////////
+
+// //////////////////// nonlinear term test //////////////////
+
+    //////////////////////// precomputation //////////////////////////
+    r1lin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r1IFh, r1IF, dt, r1_old->mesh->Nxh, r1_old->mesh->Ny, r1_old->mesh->BSZ);
+    r2lin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r2IFh, r2IF, dt, r2_old->mesh->Nxh, r2_old->mesh->Ny, r2_old->mesh->BSZ);
+    wlin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wIFh, wIF, w_old->mesh->k_squared, Re, Rf, dt, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
+    integrate_func0(w_old, w_curr, w_new, wIF, wIFh, dt);
+    integrate_func0(r1_old, r1_curr, r1_new, r1IF, r1IFh, dt);
+    integrate_func0(r2_old, r2_curr, r2_new, r2IF, r2IFh, dt);
+
+    curr_func(r1_curr, r2_curr,w_curr,u,v,S, h11, h12);
+    convect(aux, w_curr, u, v, aux1);
+    BwdTrans(mesh, w_curr->spec, w_curr->phys);
     cuda_error_func( cudaDeviceSynchronize() );
-    field_visual(cross1, "cross1.csv");
+    field_visual(w_curr, "I0w.csv");
+    field_visual(aux,"convectw.csv");
+    field_visual(h11, "I0h11.csv");
+    field_visual(h12, "I0h12.csv");
+    field_visual(u, "I0u.csv");
+    field_visual(v, "I0v.csv");
+    field_visual(S, "I0S.csv");
+    field_visual(r1_curr, "I0r1.csv");
+    field_visual(r2_curr, "I0r2.csv");
+    r1nonl_func(r1nonl, u, v, S, r1_curr, r2_curr, w_curr, h11, lambda, aux, aux1);
+    r2nonl_func(r2nonl, u, v, S, r1_curr, r2_curr, w_curr, h12, lambda, aux, aux1); 
+    wnonl_func(wnonl, h11,h12,p11,p12,p21,r1_curr,r2_curr,w_curr,u,v,Ra,S,Re, Er, lambda,aux,aux1);
+    // /************************************/
+    // p11nonl_func(p11, r1_curr, h11, Ra, S, lambda, aux);
+    // p12nonl_func(p12, r1_curr, r2_curr, h11, h12, Ra, S, lambda, aux);
+    // p21nonl_func(p21, r1_curr, r2_curr, h11, h12, Ra, S, lambda, aux);
+    
+    // //Dxx(p12)
+    // // xxDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p12->spec, wnonl->spec, mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // xxDeriv(p12, aux);
+    // cuda_error_func(cudaDeviceSynchronize());
+    // field_visual(aux, "Dxx(p12).csv");
+    // //Dxy(p11)
+    // // xyDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p11->spec, aux->spec, mesh->kx, mesh->ky, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // xyDeriv(p11, wnonl);
+    // cuda_error_func(cudaDeviceSynchronize());
+    // field_visual(wnonl, "Dxy(p11).csv");
+    // // wnonl.spec = Dxx(p12) - 2*Dxy(p11)
+    // FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, -2.0, wnonl->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    // // SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,aux->spec,-2.0,wnonl->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // cuda_error_func(cudaDeviceSynchronize());
+    // field_visual(aux, "first.csv");
+    // //Dyy(p21)
+    // // yyDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p21->spec, aux->spec, mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // // wnonl.spec = Dxx(p12) - 2*Dxy(p11) - Dyy(p21)
+    // // SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // yyDeriv(p21, aux);
+    // FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, -1.0,wnonl->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    // field_visual(wnonl, "second.csv");
+    // // wnonl.spec = 1.0/(Re*Er)(Dxx(p12) - 2*Dxy(p11) - Dyy(p21))
+    // // SpecMul<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, 1.0/(Re*Er), wnonl->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // // aux->spec = uDx(w)+vDy(w);
+    // // FwdTrans(mesh, wnonl->phys, wnonl->spec);
+    // convect(aux, w_curr, u, v, aux1);
+    // // wnonl.spec = 1.0/(Re*Er)(Dxx(p12) - 2*Dxy(p11) - Dyy(p21)) - (uDx(w)+vDy(w))
+    // // SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0/(Re*Er),wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0/(Re*Er),wnonl->phys, -1.0, aux->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    // field_visual(wnonl, "third.csv");
+    // FwdTrans(mesh, wnonl->phys, wnonl->spec);
+    // /***********************************/ 
 
-    pCross_func(cross2, aux1, r2, r1);
+    BwdTrans(mesh,wnonl->spec,wnonl->phys);
+    BwdTrans(mesh, p11->spec, p11->phys);
+    BwdTrans(mesh, p12->spec, p12->phys);
+    BwdTrans(mesh, p21->spec, p21->phys);
+    // FldAdd<<<mesh->dimGridp, mesh->dimBlockp>>>(1.0, p12->phys, -1.0, p21->phys, aux->phys, Nx, Ny, BSZ);
+    FwdTrans(mesh, p21->phys, p21->spec);
+    FwdTrans(mesh, p12->phys, p21->spec);
+    // xxDeriv(p12, aux);
+    // yyDeriv(p21, aux1);
+    // FldAdd<<<mesh->dimGridp, mesh->dimBlockp>>>(1.0, aux->phys, -1.0, aux1->phys, aux->phys, Nx, Ny, BSZ);
+    // SpecAdd<<<mesh->dimGridsp, mesh->dimGridsp>>>(1.0, aux->spec, -1.0, aux1->spec, aux->spec, Nxh ,Ny, BSZ);
+    // xyDeriv(p11, aux1);
+    // FldAdd<<<mesh->dimGridp, mesh->dimBlockp>>>(1.0, aux->phys, -2.0, aux1->phys, aux->phys, Nx, Ny, BSZ);
+    // SpecAdd<<<mesh->dimGridsp, mesh->dimGridsp>>>(-2.0, aux1->spec, 1.0, aux->spec, aux->spec, Nxh ,Ny, BSZ);
+    // BwdTrans(mesh, aux->spec, aux->phys);
+    FwdTrans(mesh, p11e->phys, p11e->spec);
+    xxDeriv(p11e, aux);
+
     cuda_error_func( cudaDeviceSynchronize() );
-    field_visual(cross2, "cross2.csv");
-
-    pSingle_func(single1, aux, r1, S, alpha, lambda, cn);
-    pSingle_func(single2, aux, r2, S, alpha, lambda, cn);
-    pCross_func(cross1, aux, r1, r2);
-    cuda_error_func( cudaDeviceSynchronize() );
-    field_visual(single1, "single1.csv");
-    field_visual(single2, "single2.csv");
-    field_visual(cross1, "cross1.csv");
-//////////////////// cross and single term tested //////////////////
-
-//////////////////// nonlinear term test //////////////////
-    p11exact<<<mesh->dimGridp, mesh->dimBlockp>>>(p11a->phys, lambda, cn, Nx, Ny, BSZ, dx, dy);
-    p12exact<<<mesh->dimGridp, mesh->dimBlockp>>>(p12a->phys, lambda, cn, Nx, Ny, BSZ, dx, dy);
-    p21exact<<<mesh->dimGridp, mesh->dimBlockp>>>(p21a->phys, lambda, cn, Nx, Ny, BSZ, dx, dy);
-    cuda_error_func( cudaDeviceSynchronize() );
-    field_visual(p11a, "p11a.csv");
-    field_visual(p12a, "p12a.csv");
-    field_visual(p21a, "p21a.csv");
-
-    r1nonl_func(nl1, aux, r1, r2, w, u, v, S, lambda, cn, Pe);
-    r2nonl_func(nl2, aux, r1, r2, w, u, v, S, lambda, cn, Pe);
-    p11nonl_func(p11, aux, aux1, r1, r2, S, alpha, lambda, cn);
-    p12nonl_func(p12, aux, aux1, r1, r2, S, alpha, lambda, cn);
-    p21nonl_func(p21, aux, aux1, r1, r2, S, alpha, lambda, cn);
-    cuda_error_func( cudaDeviceSynchronize() );
-
-    wnonl_func(nl0, aux, aux1, p11, p12, p21, r1, r2, 
-    w, u, v, alpha, S, Re, Er, cn, lambda);
-
-    FwdTrans(mesh, p12->phys, p12->spec);
-    xDeriv(p12->spec, aux->spec, mesh);
-    cuda_error_func( cudaDeviceSynchronize() );
-    xDeriv(aux->spec, aux->spec, mesh);
-    dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(aux->spec, mesh->cutoff, Nxh, Ny, BSZ); 
-    BwdTrans(nl0->mesh, nl0->spec, nl0->phys);
-    cuda_error_func( cudaDeviceSynchronize() );
-
-
-    // second time, to test whether it is rep
-    r1nonl_func(nl1, aux, r1, r2, w, u, v, S, lambda, cn, Pe);
-    r2nonl_func(nl2, aux, r1, r2, w, u, v, S, lambda, cn, Pe);
-    p11nonl_func(p11, aux, aux1, r1, r2, S, alpha, lambda, cn);
-    p12nonl_func(p12, aux, aux1, r1, r2, S, alpha, lambda, cn);
-    p21nonl_func(p21, aux, aux1, r1, r2, S, alpha, lambda, cn);
-    cuda_error_func( cudaDeviceSynchronize() );
-
-    wnonl_func(nl0, aux, aux1, p11, p12, p21, r1, r2, 
-    w, u, v, alpha, S, Re, Er, cn, lambda);
-
-    FwdTrans(mesh, p12->phys, p12->spec);
-    xDeriv(p12->spec, aux->spec, mesh);
-    cuda_error_func( cudaDeviceSynchronize() );
-    xDeriv(aux->spec, aux->spec, mesh);
-    dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(aux->spec, mesh->cutoff, Nxh, Ny, BSZ); 
-    BwdTrans(nl0->mesh, nl0->spec, nl0->phys);
-    cuda_error_func( cudaDeviceSynchronize() );
-    field_visual(nl1, "nl1.csv");
-    field_visual(nl2, "nl2.csv");
+    field_visual(aux, "xxD.csv");
+    field_visual(wnonl, "I0wnonl.csv");
+    field_visual(r1nonl, "I0r1nonl.csv");
+    field_visual(r2nonl, "I0r2nonl.csv");
     field_visual(p11, "p11.csv");
     field_visual(p12, "p12.csv");
     field_visual(p21, "p21.csv");
-    field_visual(nl0, "nl0.csv");
-
     return 0;
 }
