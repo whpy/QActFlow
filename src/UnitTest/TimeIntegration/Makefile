@@ -31,6 +31,14 @@ heat2D:
 	$(NVCC) -I $(INC) -c heat2D.cu
 	$(NVCC) -o heat2D.out heat2D.o FldOp.o Field.o Mesh.o RK4.o -lcufft
 
+ModTimeInt:
+	$(NVCC) -I $(INC) -c $(SRC)/Basic/Field.cpp
+	$(NVCC) -I $(INC) -c $(SRC)/Basic/Mesh.cpp
+	$(NVCC) -I $(INC) -c $(SRC)/Basic/FldOp.cu
+	$(NVCC) -I $(INC) -c $(SRC)/TimeIntegration/RK4.cu
+	$(NVCC) -I $(INC) -c ModTimeInt.cu
+	$(NVCC) -o ModTimeInt.out ModTimeInt.o FldOp.o Field.o Mesh.o RK4.o -lcufft
+
 .PHONY: clean
 clean:
 	rm *.o main *.csv *.out

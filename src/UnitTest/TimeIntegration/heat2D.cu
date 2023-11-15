@@ -109,8 +109,8 @@ void coord(Mesh &mesh){
 int main(){
     int BSZ = 16;
     int Ns = 201;
-    int Nx = 128; // same as colin
-    int Ny = 16;
+    int Nx = 512; // same as colin
+    int Ny = 512;
     int Nxh = Nx/2+1;
     Qreal Lx = 4*M_PI;
     Qreal Ly = 4*M_PI;
@@ -183,6 +183,7 @@ int main(){
             // cout<<"t: " << m*dt << "  " << u->phys[5] << endl;
         }
     }
+    delete mesh;
     
     return 0;
 }

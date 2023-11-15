@@ -8,12 +8,12 @@ for i = 1:length(namelist)
 end
 
 for i = 0:2:200
-%     ut = load(num2str(i)+"u.csv");
+    ut = load(num2str(i)+"u.csv");
 %     visual(ut,i+1,x,y);
 %     figure(i+1);
 %     title(i);
     figure(i+1)
-    plot(x(1,:),ut(1,:))
+    plot(x(256,:),ut(256,:))
     axis([0 4*pi -2 2])
     title(i)
 end
