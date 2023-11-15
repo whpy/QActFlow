@@ -1,5 +1,5 @@
 #include <Basic/QActFlow.h>
-#include <Basic/FldOp.hpp>
+#include <Basic/FldOp.cuh>
 #include <Basic/Field.h>
 #include <Basic/cuComplexBinOp.hpp>
 #include <TimeIntegration/RK4.cuh>
@@ -7,6 +7,12 @@
 #include <iostream>
 
 using namespace std;
+
+// du/dt = L(u) + NL(u),
+// L(u) = \miu*(Dxx+Dyy)(u), NL(u) = 0
+// \miu = 1.0
+
+
 __global__ void init_func(Qreal* fp, Qreal dx, Qreal dy, int Nx, int Ny, int BSZ){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
@@ -14,7 +20,7 @@ __global__ void init_func(Qreal* fp, Qreal dx, Qreal dy, int Nx, int Ny, int BSZ
     if(i<Nx && j<Ny){
         Qreal x = i*dx;
         Qreal y = j*dy;
-        fp[index] = -1.0*sin(x);
+        fp[index] = exp(-1.0* ((x-dx*Nx/2)*(x-dx*Nx/2) + (y-dy*Ny/2)*(y-dy*Ny/2)) );
     }
 }
 
@@ -35,16 +41,15 @@ void field_visual(Field *f, string name){
 Qreal exact(Qreal t){
     return -1.0 - 1.0/(t+1.0);
 }
-// du/dt = L(u) + NL(u),
-// L(u) = \miu*Dxx(u), NL(u) = -1*u*Dx(u)
+
 __global__
-void ulin_func(Qreal* IFuh, Qreal* IFu, Qreal* kx, 
+void ulin_func(Qreal* IFuh, Qreal* IFu, Qreal* k_squared,
 Qreal dt, int Nxh, int Ny, int BSZ)
 {
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
-    Qreal alpha = -1.0*0.005*kx[i]*kx[i];
+    Qreal alpha = -1.0*(k_squared[index]);
     if(i<Nxh && j<Ny){
         IFuh[index] = exp( alpha *dt/2);
         IFu[index] = exp( alpha *dt);
@@ -55,16 +60,8 @@ void unonl_func(Field* unonl, Field* ucurr, Qreal t){
     Mesh* mesh = unonl->mesh;
     dim3 dimGrid = mesh->dimGridp;
     dim3 dimBlock = mesh->dimBlockp;
-
-    // unonl.spec = Dx(ucurr)
-    xDeriv(ucurr->spec, unonl->spec, unonl->mesh);
-    dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(unonl->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-    // unonl.phys = Dx(ucurr)
-    BwdTrans(unonl->mesh, unonl->spec, unonl->phys);
-    // unonl.phys = unonl.phys*ucurr = ucurr*Dx(ucurr)
-    FldMul<<<dimGrid, dimBlock>>>(ucurr->phys, unonl->phys, 1.0, unonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
-    // update the spectral space
-    FwdTrans(unonl->mesh, unonl->phys, unonl->spec);
+    FldSet<<<dimGrid, dimBlock>>>(unonl->phys, 0.0, mesh->Nx, mesh->Ny, mesh->BSZ);
+    FwdTrans(mesh, unonl->phys, unonl->spec);
 }
 
 void print_spec(Field* f){
@@ -112,7 +109,7 @@ void coord(Mesh &mesh){
 int main(){
     int BSZ = 16;
     int Ns = 201;
-    int Nx = 512*2; // same as colin
+    int Nx = 128; // same as colin
     int Ny = 16;
     int Nxh = Nx/2+1;
     Qreal Lx = 4*M_PI;
@@ -137,7 +134,8 @@ int main(){
     // initialize the field
     // set up the Integrating factor
     // we may take place here by IF class
-    ulin_func<<<mesh->dimGridsp,mesh->dimBlocksp>>>(IFuh, IFu, mesh->kx, dt, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    ulin_func<<<mesh->dimGridsp,mesh->dimBlocksp>>>(IFuh, IFu, mesh->k_squared, 
+    dt, mesh->Nxh, mesh->Ny, mesh->BSZ);
     // initialize the physical space of u(u_o.x << "," << f->phys[index].y ld)
     init_func<<<mesh->dimGridp,mesh->dimBlockp>>>(u->phys, 
     mesh->dx, mesh->dy, mesh->Nx, mesh->Ny, mesh->BSZ);
@@ -155,27 +153,25 @@ int main(){
     
     for(int m=0 ;m<Ns ;m++){
         integrate_func0(u, ucurr, unew, IFu, IFuh, dt);
-        BwdTrans(mesh, ucurr->spec, ucurr->phys);
         
+        BwdTrans(mesh, ucurr->spec, ucurr->phys);
         unonl_func(unonl, ucurr, m*dt);
         cuda_error_func( cudaDeviceSynchronize() );
         // printf("(%f, %f)\n", unonl->spec[5].x, unonl->spec[5].y);
         integrate_func1(u, ucurr, unew, unonl, IFu, IFuh, dt);
+        
         BwdTrans(mesh, ucurr->spec, ucurr->phys);
-
         unonl_func(unonl, ucurr, m*dt);
         integrate_func2(u, ucurr, unew, unonl, IFu, IFuh, dt);
-        BwdTrans(mesh, ucurr->spec, ucurr->phys);
         
+        BwdTrans(mesh, ucurr->spec, ucurr->phys);
         unonl_func(unonl, ucurr, m*dt);
         integrate_func3(u, ucurr, unew, unonl, IFu, IFuh, dt);
-        BwdTrans(mesh, ucurr->spec, ucurr->phys);
         
+        BwdTrans(mesh, ucurr->spec, ucurr->phys);
         unonl_func(unonl, ucurr, m*dt);
         integrate_func4(u, ucurr, unew, unonl, IFu, IFuh, dt);
-        BwdTrans(mesh, ucurr->spec, ucurr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        unonl_func(unonl, ucurr, m*dt);
+        
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(u->spec, unew->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
         
         if(m%1 == 0) cout << "t = " << m*dt << endl;
