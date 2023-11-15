@@ -7,9 +7,9 @@
 
 using namespace std;
 
-// \phi = sin(17*x+3*y)
-// r1 = cos(5*x+y)
-// r2 = sin(5*x+y)
+// \phi = sin(2*x+3*y)
+// r1 = sin(x)^2
+// r2 = sin(x)^2
 
 __global__
 void PhiinitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
@@ -19,7 +19,7 @@ void PhiinitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = sin(17*x + 3*y);
+        phys[index] = sin(2*x + 3*y);
     }
 }
 
@@ -31,11 +31,10 @@ void rinitD(Qreal* r1, Qreal* r2, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        r1[index] = cos(5*x + y);
-        r2[index] = sin(5*x + y);
+        r1[index] = sin(x)*sin(x);
+        r2[index] = sin(x)*sin(x);
     }
 }
-
 __global__
 void RainitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     int i = blockIdx.x * BSZ + threadIdx.x;
@@ -58,7 +57,7 @@ void SexactD(Qreal* S, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        S[index] = 2.0;
+        S[index] = 2*sqrt( cos(y)*cos(y) + sin(x)*sin(x) );
     }
 }
 
@@ -110,8 +109,9 @@ void NL1exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = -29*cos(5*x+y) + 2*cos(17*x+3*y)*sin(5*x+y) + 
-        298.0*(0.0342282+sin(5*x+y))*sin(17*x+3*y);
+        phys[index] = 2*cos(x)*cos(x) - 8*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*sin(x) 
+        + 3.0*cos(2*x+3*y)*sin(2*x) + 1.69706*sin(x)*sin(x)*sin(2*x+3*y)
+        + sin(x)*sin(x)*(-1.0+13*sin(2*x+3*y));
     }
 }
 
@@ -124,8 +124,9 @@ void NL2exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = -29.0*sin(5*x+y) + cos(5*x+y)*(-2.0*cos(17.0*x+3.0*y) 
-        - 298.0*sin(17.0*x+3.0*y)) - 28.0*sin(17*x+3*y);
+        phys[index] = 2*cos(x)*cos(x) - 8*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*sin(x) 
+        + 3.0*cos(2*x+3*y)*sin(2*x) + sin(x)*sin(x)*(-1.0-13*sin(2*x+3*y))
+        + 0.707107*sin(x)*sin(x)*sin(2*x+3*y);
     }
 }
 
@@ -137,7 +138,9 @@ void NL0exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = 5600.0*cos(5*x+y) - 13440.0*sin(5*x+y);
+        phys[index] = ( -113.137 - 721.249*cos(4*x) + 523.259*cos(6*x) - 
+        183.848*cos(8*x) +28.2843*cos(10*x) 
+        + cos(2*x)*(466.69 - 40.0*sin(x)*sin(x))  ) / (sin(x)*sin(x));
     }
 }
 
