@@ -1,0 +1,7 @@
+11/15/2023
+it is found that the newly constructed function involving y-derivative
+(yyDeriv, xyDeriv) in streamfuncmodified exists unknown bug. As a temporary 
+expediency, the alternative solution is replacing by double times y-deriv or 
+combination of x-deri and y-deriv. Though the xxDeriv is reliable, but to be
+safe, we decided to replace all the double derivatives function by the measure
+we mentioned above.

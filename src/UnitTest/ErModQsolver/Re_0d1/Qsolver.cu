@@ -70,7 +70,7 @@ using std::endl;
 int main(){
     // computation parameters
     int BSZ = 16;
-    int Ns = 20000;
+    int Ns = 200000;
     int Nx = 512; // same as colin
     int Ny = 512;
     int Nxh = Nx/2+1;
@@ -106,7 +106,7 @@ int main(){
     // Qreal cf = lc/lf;
     Qreal cf = sqrt(Rf);
     Qreal Er = 0.1;
-    Qreal Re = 0.25;
+    Qreal Re = 0.1;
 
     // by specially choosing the scales, colin makes the Pe equals to 1.0
     Qreal Pe = 1.0;
@@ -123,6 +123,7 @@ int main(){
     cout<< "Lx: " << mesh->Lx << " "<< "Ly: " << mesh->Ly << " " << endl;
     cout<< "Nx: " << mesh->Nx << " "<< "Ny: " << mesh->Ny << " " << endl;
     cout<< "dx: " << mesh->dx << " "<< "dy: " << mesh->dy << " " << endl;
+    cout<< "dt: " << dt << endl;
     cout<< "Nx*dx: " << mesh->Nx*mesh->dx << " "<< "Ny*dy: " << mesh->Ny*mesh->dy << " " << endl;
     Field *w_old = new Field(mesh); Field *w_curr = new Field(mesh); Field *w_new = new Field(mesh);
     Field *r1_old = new Field(mesh); Field *r1_curr = new Field(mesh); Field *r1_new = new Field(mesh);
@@ -240,9 +241,12 @@ int main(){
         // cout << "flag 8" << endl;
         cuda_error_func( cudaDeviceSynchronize() );
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(w_old->spec, w_new->spec, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
-        // cout << "flag 13" << endl;
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r1_old->spec, r1_new->spec, r1_old->mesh->Nxh, r1_old->mesh->Ny, r1_old->mesh->BSZ);
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r2_old->spec, r2_new->spec, r2_old->mesh->Nxh, r2_old->mesh->Ny, r2_old->mesh->BSZ);
+
+        BwdTrans(mesh, w_old->spec, w_old->phys);
+        BwdTrans(mesh, r1_old->spec, r1_old->phys);
+        BwdTrans(mesh, r2_old->spec, r2_old->phys);
         // cout << "flag 12" << endl;
         // SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(u->spec, unew->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
         // cuda_error_func( cudaDeviceSynchronize() );
@@ -255,11 +259,13 @@ int main(){
             BwdTrans(mesh, r1_old->spec, r1_old->phys);
             BwdTrans(mesh, r2_old->spec, r2_old->phys);
             BwdTrans(mesh, w_old->spec, w_old->phys);
+            
             cuda_error_func( cudaDeviceSynchronize() );
 
             field_visual(r1_old, to_string(m)+"r1.csv");
             field_visual(r2_old, to_string(m)+"r2.csv");
             field_visual(w_old, to_string(m)+"w.csv");
+            field_visual(S, to_string(m)+"S.csv");
             if (std::isnan(r1_old->phys[0])) {"NAN ";exit(0);}
         }
         // if(m%100 == 0) cout << "t = " << m*dt << endl;

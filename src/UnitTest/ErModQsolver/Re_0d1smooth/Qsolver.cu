@@ -78,7 +78,7 @@ int main(){
     Qreal Ly = Lx;
     Qreal dx = Lx/Nx;
     Qreal dy = dx;
-    Qreal dt = 0.0001; // same as colin
+    Qreal dt = 0.001; // same as colin
     // Qreal a = 1.0;
 
     //////////////////////// variables definitions //////////////////////////
@@ -88,15 +88,11 @@ int main(){
     // to distinguish the Er we use in theis programe
     // we denotes the Er in paper as Er_n
     double Er_n = 0.1;
-    // Ra = ln/la, which the square of \tiled(alpha)
-    
+    // Ra = (ln/la)^2, which the square of \tiled(alpha)
+    double Ra = -0.05; 
+    // Rf = (ln/lf)^2, which we defines cf = lc/lf where lc = ln in prl.
+    // so cf = sqrt(Rf)
     double Rf = 7.5*0.00001;
-    double ln = 0.05;
-    double lc = ln;
-    double lf = sqrt(Rf);
-    double Ra = 0.025; 
-
-
     Qreal lambda = 0.1;
     
     // C_{cn} = lc/ln = 1.0 as colin set lc = ln.
@@ -105,8 +101,8 @@ int main(){
     // C_{cf} = lc/lf = ln/lf = sqrt(Rf)
     // Qreal cf = lc/lf;
     Qreal cf = sqrt(Rf);
-    Qreal Er = 0.1;
-    Qreal Re = 0.25;
+    Qreal Er = Er_n;
+    Qreal Re = Re_n;
 
     // by specially choosing the scales, colin makes the Pe equals to 1.0
     Qreal Pe = 1.0;
@@ -118,6 +114,7 @@ int main(){
     Mesh *mesh = new Mesh(BSZ, Nx, Ny, Lx, Ly);
     cout << "Re = " << Re << endl;
     cout << "Er = " << Er << endl;
+    cout << "Ra = " << Ra << endl;
     cout << "Pe = " << Pe << endl;
     cout << "cf = " << cf << endl;
     cout<< "Lx: " << mesh->Lx << " "<< "Ly: " << mesh->Ly << " " << endl;
@@ -151,7 +148,7 @@ int main(){
     wlin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wIFh, wIF, w_old->mesh->k_squared, Re, cf, dt, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
     
     // the precomputation function also updates the spectrum of corresponding variables
-    precompute_func(r1_old, r2_old, w_old, Phy_init);
+    precompute_func(r1_old, r2_old, w_old, Spec_init);
     alpha_init(alpha->phys, Ra, dx, dy, Nx, Ny);
     FwdTrans(mesh, alpha->phys, alpha->spec);
     // prepare the referenced system
@@ -251,7 +248,7 @@ int main(){
 
         cout << "\r" << "t = " << m*dt << flush;
         }
-        if (m%200 == 0){
+        if (m%20 == 0){
             BwdTrans(mesh, r1_old->spec, r1_old->phys);
             BwdTrans(mesh, r2_old->spec, r2_old->phys);
             BwdTrans(mesh, w_old->spec, w_old->phys);

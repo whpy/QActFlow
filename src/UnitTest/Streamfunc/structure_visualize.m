@@ -41,7 +41,7 @@ end
 % title("nl1a")
 % visual(nl1, 3, x, y)
 % title("nl1")
-% visual(nl1-nl1a, 6, x, y)
+visual(nl1-nl1a, 6, x, y)
 % title("nl1 err")
 % visual(nl2a, 4, x, y)
 % title("nl2a")

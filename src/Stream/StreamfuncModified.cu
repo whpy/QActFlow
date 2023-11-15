@@ -58,32 +58,44 @@ void xxDerivD(Qcomp *f_spec, Qcomp *fxx_spec, Qreal *kx, int Nxh, int Ny, int BS
         fxx_spec[index] = -1.0*f_spec[index]*kx[i]*kx[i];
     }
 }
-inline void xxDeriv(Field *f, Field* fxx){
+// void xxDeriv(Field *f, Field* fxx){
+//     Mesh *mesh = f->mesh;
+//     int Nxh = mesh->Nxh; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
+//     dim3 dimGrid = mesh->dimGridsp; dim3 dimBlock = mesh->dimBlocksp;
+//     xxDerivD<<<dimGrid, dimBlock>>>(f->spec, fxx->spec, mesh->kx, Nxh, Ny, BSZ);
+//     BwdTrans(mesh, fxx->spec, fxx->phys);
+// }
+void xxDeriv(Field *f, Field* fxx){
     Mesh *mesh = f->mesh;
-    int Nxh = mesh->Nxh; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
-    dim3 dimGrid = mesh->dimGridsp; dim3 dimBlock = mesh->dimBlocksp;
-    xxDerivD<<<dimGrid, dimBlock>>>(f->spec, fxx->spec, mesh->kx, Nxh, Ny, BSZ);
+    xDeriv(f->spec, fxx->spec, mesh);
+    xDeriv(fxx->spec, fxx->spec, mesh);
     BwdTrans(mesh, fxx->spec, fxx->phys);
 }
-
 __global__
 void yyDerivD(Qcomp *f_spec, Qcomp *fyy_spec, Qreal *ky, int Nxh, int Ny, int BSZ){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
     if(i<Nxh && j<Ny){
-        //D_xy(f) = -1*ky*ky*f_spec
+        //D_yy(f) = -1*ky*ky*f_spec
         fyy_spec[index] = -1.0*f_spec[index]*ky[i]*ky[i];
     }
 }
-inline void yyDeriv(Field *f, Field* fyy){
+// void yyDeriv(Field *f, Field* fyy){
+//     Mesh *mesh = f->mesh;
+//     int Nxh = mesh->Nxh; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
+//     dim3 dimGrid = mesh->dimGridsp; dim3 dimBlock = mesh->dimBlocksp;
+//     yyDerivD<<<dimGrid, dimBlock>>>(f->spec, fyy->spec, mesh->ky, Nxh, Ny, BSZ);
+//     BwdTrans(mesh, fyy->spec, fyy->phys);
+// }
+void yyDeriv(Field *f, Field* fyy){
     Mesh *mesh = f->mesh;
-    int Nxh = mesh->Nxh; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
-    dim3 dimGrid = mesh->dimGridsp; dim3 dimBlock = mesh->dimBlocksp;
-    yyDerivD<<<dimGrid, dimBlock>>>(f->spec, fyy->spec, mesh->ky, Nxh, Ny, BSZ);
+    yDeriv(f->spec, fyy->spec, mesh);
+    yDeriv(fyy->spec, fyy->spec, mesh);
     BwdTrans(mesh, fyy->spec, fyy->phys);
 }
 
+__global__
 void xyDerivD(Qcomp *f_spec, Qcomp *fxy_spec, Qreal *kx, Qreal *ky, int Nxh, int Ny, int BSZ){
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
@@ -93,15 +105,20 @@ void xyDerivD(Qcomp *f_spec, Qcomp *fxy_spec, Qreal *kx, Qreal *ky, int Nxh, int
         fxy_spec[index] = -1.0*f_spec[index]*kx[i]*ky[i];
     }
 }
-inline void xyDeriv(Field *f, Field* fxy){
+// void xyDeriv(Field *f, Field* fxy){
+//     Mesh *mesh = f->mesh;
+//     int Nxh = mesh->Nxh; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
+//     dim3 dimGrid = mesh->dimGridsp; dim3 dimBlock = mesh->dimBlocksp;
+//     xyDerivD<<<dimGrid, dimBlock>>>(f->spec, fxy->spec, mesh->kx, mesh->ky, Nxh, Ny, BSZ);
+//     BwdTrans(mesh, fxy->spec, fxy->phys);
+// }
+void xyDeriv(Field *f, Field* fxy){
     Mesh *mesh = f->mesh;
-    int Nxh = mesh->Nxh; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
-    dim3 dimGrid = mesh->dimGridsp; dim3 dimBlock = mesh->dimBlocksp;
-    xyDerivD<<<dimGrid, dimBlock>>>(f->spec, fxy->spec, mesh->kx, mesh->ky, Nxh, Ny, BSZ);
+    xDeriv(f->spec, fxy->spec, mesh);
+    yDeriv(fxy->spec, fxy->spec, mesh);
     BwdTrans(mesh, fxy->spec, fxy->phys);
 }
-
-inline void convect(Field *convf, Field *f, Field *u, Field *v, Field *aux){
+void convect(Field *convf, Field *f, Field *u, Field *v, Field *aux){
     Mesh* mesh = convf->mesh;
     xDeriv(f->spec, convf->spec, mesh);
     BwdTrans(mesh, convf->spec, convf->phys);
@@ -148,44 +165,48 @@ Field *S, Field *h11, Field *h12){
     BwdTrans(wcurr->mesh, wcurr->spec, wcurr->phys);
     // calculate the physical val of S
     S_funcD<<<dimGrid, dimBlock>>>(r1curr->phys, r2curr->phys, S->phys, Nx, Ny, BSZ);
+
+    // then update the h11 h12
+    h11nonl_func(h11, r1curr, S);
+    h12nonl_func(h12, r2curr, S);
 }
 
 
-inline void h11nonl_func(Field *h11, Field *r1, Field *S){   
+void h11nonl_func(Field *h11, Field *r1, Field *S){   
     hcal_func(r1, S, h11);
 }
 
-inline void h12nonl_func(Field *h12, Field *r2, Field *S){
+void h12nonl_func(Field *h12, Field *r2, Field *S){
     hcal_func(r2, S, h12);
 }
 
 __global__
-void r1lin_func(Qreal* IFr1h, Qreal* IFr1, Qreal* k_squared, Qreal Pe, Qreal cn, Qreal dt, int Nxh, int Ny, int BSZ)
+void r1lin_func(Qreal* IFr1h, Qreal* IFr1, Qreal dt, int Nxh, int Ny, int BSZ)
 {
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
-    double alpha1 = 1.0;
+    double alpha1 = 0.0;
     if(i<Nxh && j<Ny){
         // IFr1h[index] = exp( alpha1*dt/2);
-        IFr1h[index] = 1.0;
+        IFr1h[index] = exp( alpha1*dt/2);
         // IFr1[index] = exp( alpha1*dt);
-        IFr1[index] = 1.0;
+        IFr1[index] = exp( alpha1*dt);
     }
 }
 
 __global__
-void r2lin_func(Qreal* IFr2h, Qreal* IFr2, Qreal* k_squared, Qreal Pe, Qreal cn, Qreal dt, int Nxh, int Ny, int BSZ)
+void r2lin_func(Qreal* IFr2h, Qreal* IFr2, Qreal dt, int Nxh, int Ny, int BSZ)
 {
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
     double alpha2 = 0.0;
     if(i<Nxh && j<Ny){
-        // IFr2h[index] = exp( alpha2*dt/2);
-        IFr2h[index] = 1.0;
-        // IFr2[index] = exp( alpha2*dt);
-        IFr2[index] = 1.0;
+        IFr2h[index] = exp( alpha2*dt/2);
+        // IFr2h[index] = 1.0;
+        IFr2[index] = exp( alpha2*dt);
+        // IFr2[index] = 1.0;
     }
 }
 
@@ -215,6 +236,7 @@ void p11nonl_func(Field *p11, Field *r1, Field *h11, Field *Ra, Field *S, Qreal 
 
     // p11 = p11 + aux = -lambda*S*h11 -Ra*r1
     FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p11->phys, p11->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    FwdTrans(mesh, p11->phys, p11->spec);
 }
 void p12nonl_func(Field *p12, Field *r1, Field *r2, Field *h11, Field *h12, Field *Ra, Field *S, Qreal lambda, Field *aux){
     // p12 = 2*(r2h11 - r1h12) - lambda*Sh12 - Ra*r2
@@ -239,8 +261,9 @@ void p12nonl_func(Field *p12, Field *r1, Field *r2, Field *h11, Field *h12, Fiel
 
     // p12 = p12 + aux = 2*(r2h11 - r1h12) -lambda * S * h12 -Ra*r2
     FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p12->phys, p12->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
-
+    FwdTrans(mesh, p12->phys, p12->spec);
 } 
+
 void p21nonl_func(Field *p21, Field *r1, Field *r2, Field *h11, Field *h12, Field *Ra, Field *S, Qreal lambda, Field *aux){
     // p21 = 2*(r1h12 - r2h11) - lambda*Sh12 - Ra*r2
     Mesh *mesh = p21->mesh;
@@ -264,13 +287,15 @@ void p21nonl_func(Field *p21, Field *r1, Field *r2, Field *h11, Field *h12, Fiel
 
     // p21 = p21 + aux = 2*(r2h11 - r1h12) -lambda * S * h12 -Ra*r2
     FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, 1.0, p21->phys, p21->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    FwdTrans(mesh, p21->phys, p21->spec);
 }
 
 void r1nonl_func(Field *r1nonl, Field * u, Field * v, 
-Field *S, Field *r1, Field *r2, Field *w, Field *h11, Qreal lambda, Field *aux){
+Field *S, Field *r1, Field *r2, Field *w, Field *h11, Qreal lambda, Field *aux, Field *aux1){
     Mesh *mesh = r1nonl->mesh;
     // -1*convect(r1) + lambda*S*Dx(u) - r2*w + h11
-    convect(r1nonl, r1, u, v, aux);
+    // aux->phys = convect(r1)
+    convect(aux, r1, u, v, aux1);
 
     // r1nonl = lambda*S*Dx(u)
     xDeriv(u->spec, r1nonl->spec, mesh);
@@ -285,39 +310,54 @@ Field *S, Field *r1, Field *r2, Field *w, Field *h11, Qreal lambda, Field *aux){
     // aux = -r2*w 
     FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r2->phys, w->phys, -1.0, aux->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
-
+    
+    // r1nonl = r1nonl -r2*w = -1*convect(r1) + lambda*S*Dx(u) - r2*w 
     FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r1nonl->phys, 1.0, aux->phys, r1nonl->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
-
+    // r1nonl = r1nonl + h11 = -1*convect(r1) + lambda*S*Dx(u) - r2*w +h11
     FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r1nonl->phys, 1.0,h11->phys, r1nonl->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
+    FwdTrans(mesh, r1nonl->phys, r1nonl->spec );
 }
 
 void r2nonl_func(Field *r2nonl, Field * u, Field * v, 
-Field *S, Field *r1, Field *r2, Field *w, Field *h12, Qreal lambda, Field *aux){
+Field *S, Field *r1, Field *r2, Field *w, Field *h12, Qreal lambda, Field *aux, Field *aux1){
     Mesh *mesh = r2nonl->mesh;
     // -1*convect(r2) + 0.5*lambda*S*Dy(u) + 0.5*lambda*S*Dx(v) + r1*w + h12
-    convect(r2nonl, r2, u, v, aux);
+    
 
-    // r1nonl = lambda*S*Dx(u)
-    xDeriv(u->spec, r2nonl->spec, mesh);
+    // r2nonl = 0.5*lambda*S*Dy(u)
+    yDeriv(u->spec, r2nonl->spec, mesh);
     BwdTrans(mesh, r2nonl->spec, r2nonl->phys);
-    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r2nonl->phys, S->phys, lambda, r2nonl->phys, 
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r2nonl->phys, S->phys, 0.5*lambda, r2nonl->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
 
-    // r1nonl = r1nonl - convect(r1) = -1*convect(r1) + lambda*S*Dx(u)
+    // aux = 0.5*lambda*S*Dx(v) 
+    xDeriv(v->spec, aux->spec, mesh);
+    BwdTrans(mesh, aux->spec, aux->phys);
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(aux->phys, S->phys, 0.5*lambda, aux->phys, 
+    mesh->Nx, mesh->Ny, mesh->BSZ);
+    // r2nonl = r2nonl + convect(r1) = 0.5*lambda*S*Dy(u) + 0.5*lambda*S*Dx(v)
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, 
+    mesh->Nx, mesh->Ny, mesh->BSZ);
+    
+    // aux = convect(r2)
+    convect(aux, r2, u, v, aux1);
+    // r2nonl = r2nonl - convect(r1) = -1*convect(r2) + 0.5*lambda*S*Dy(u) + 0.5*lambda*S*Dx(v)
     FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r2nonl->phys, -1.0, aux->phys, r2nonl->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
 
-    // aux = -r2*w 
-    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r2->phys, w->phys, -1.0, aux->phys, 
+    // aux = r1*w 
+    FldMul<<<mesh->dimGridp,mesh->dimBlockp>>>(r1->phys, w->phys, 1.0, aux->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
-
+    // r2nonl = r2nonl + aux = -1*convect(r2) + 0.5*lambda*S*Dy(u) + 0.5*lambda*S*Dx(v) + r1*w 
     FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
 
-    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r2nonl->phys, 1.0,h12->phys, r2nonl->phys, 
+    // -1*convect(r2) + 0.5*lambda*S*Dy(u) + 0.5*lambda*S*Dx(v) + r1*w + h12
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, r2nonl->phys, 1.0, h12->phys, r2nonl->phys, 
     mesh->Nx, mesh->Ny, mesh->BSZ);
+    FwdTrans(mesh, r2nonl->phys, r2nonl->spec);
 }
 
 void wnonl_func(Field *wnonl, Field *h11, Field *h12, Field *p11, Field *p12, Field *p21, Field *r1, Field *r2, Field *w, 
@@ -326,19 +366,31 @@ void wnonl_func(Field *wnonl, Field *h11, Field *h12, Field *p11, Field *p12, Fi
     p11nonl_func(p11, r1, h11, Ra, S, lambda, aux);
     p12nonl_func(p12, r1, r2, h11, h12, Ra, S, lambda, aux);
     p21nonl_func(p21, r1, r2, h11, h12, Ra, S, lambda, aux);
-
-    xxDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p12->spec, wnonl->spec, mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
-    xyDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p11->spec, aux->spec, mesh->kx, mesh->ky, mesh->Nxh, mesh->Ny, mesh->BSZ);
-
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,aux->spec,-2.0,wnonl->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
     
-    yyDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p21->spec, aux->spec, mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    //Dxx(p12)
+    // xxDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p12->spec, wnonl->spec, mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    xxDeriv(p12, aux);
+    //Dxy(p11)
+    // xyDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p11->spec, aux->spec, mesh->kx, mesh->ky, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    xyDeriv(p11, wnonl);
+    // wnonl.spec = Dxx(p12) - 2*Dxy(p11)
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, -2.0,wnonl->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    // SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,aux->spec,-2.0,wnonl->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
+    
+    //Dyy(p21)
+    // yyDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p21->spec, aux->spec, mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // wnonl.spec = Dxx(p12) - 2*Dxy(p11) - Dyy(p21)
+    // SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
+    yyDeriv(p21, aux);
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, wnonl->phys, -1.0,aux->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
 
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
-
-    SpecMul(wnonl->spec, 1.0/(Re*Er), wnonl->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
-
+    // wnonl.spec = 1.0/(Re*Er)(Dxx(p12) - 2*Dxy(p11) - Dyy(p21))
+    // SpecMul<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, 1.0/(Re*Er), wnonl->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // aux->spec = uDx(w)+vDy(w);
+    FwdTrans(mesh, wnonl->phys, wnonl->spec);
     convect(aux, w, u, v, aux1);
-
-    SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // wnonl.spec = 1.0/(Re*Er)(Dxx(p12) - 2*Dxy(p11) - Dyy(p21)) - (uDx(w)+vDy(w))
+    // SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0/(Re*Er),wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
+    FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(Qreal(1.0/(Re*Er)),wnonl->phys, -1.0, aux->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    FwdTrans(mesh, wnonl->phys, wnonl->spec);
 }

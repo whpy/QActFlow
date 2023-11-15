@@ -20,7 +20,7 @@ void PhiinitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = sin(2*x);
+        phys[index] = sin(x + y);
     }
 }
 __global__
@@ -42,8 +42,8 @@ void rinitD(Qreal* r1, Qreal* r2, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        r1[index] = cos(2.0*x);
-        r2[index] = sin(2.0*x);
+        r1[index] = cos(x + y);
+        r2[index] = sin(x + y);
     }
 }
 
@@ -116,7 +116,13 @@ void NL1exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
         // phys[index] = -8.0*cos(2.0*x+y) - 
         // 5.0*cos(3.0*x+4.0*y)*sin(2.0*x+y)+
         // 25.0*(0.096+sin(2.0*x+y))*sin(3.0*x+4.0*y);
-        phys[index] = -7.0*cos(2.0*x) + 4.0*sin(2*x)*sin(2*x);
+        // phys[index] = -7.0*cos(2.0*x) + 4.0*sin(2*x)*sin(2*x);
+        // phys[index] = -8.0*cos(2.0*x + y) + 5.0*sin(2*x+y)*(sin(2*x+y) +0.08);
+        // phys[index] = -5.0*cos(x + y) + cos(2*x+y)*sin(x+y) + 
+        // 5.0*(sin(x+y) +0.08)*sin(2*x+y);
+        // phys[index] = -8.0*cos(2*x+y) - cos(x+y)*sin(2*x + y) +
+        // 2.0*sin(x+y)*(0.1+sin(2*x+y));
+        phys[index] = -5*cos(x + y) + 2*sin(x+y)*(0.1+sin(x+y));
     }
 }
 
@@ -136,7 +142,11 @@ void NL2exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
         // cos(x+y)*(cos(3*x+4*y) - 25.0*sin(3*x+4*y)) + 0.7*sin(3*x+4*y);
         // phys[index] = -8.0*sin(2.0*x+y) + 
         // 5.0*cos(2*x+y)*(cos(3.0*x+4.0*y) - 5.0*sin(3.0*x+4.0*y)) + 0.7*sin(3.0*x+4.0*y);
-        phys[index] = -4.0*(1.85+cos(2.0*x))*sin(2.0*x);
+        // phys[index] = -4.0*(1.85+cos(2.0*x))*sin(2.0*x);
+        // phys[index] = -5.0*(1.66+cos(2.0*x+y))*sin(2.0*x+y);
+        // phys[index] = -5.0*sin(x+y) - 0.3*sin(2*x+y) - cos(x+y)*(cos(2*x+y) + 5*sin(2*x+y));
+        // phys[index] = cos(x+y)*cos(2*x+y) - 2*cos(2*x+y)*sin(x+y) - 8*sin(2*x+y);
+        phys[index] = -((5+2*cos(x+y))*sin(x+y));
     }
 }
 
@@ -148,7 +158,10 @@ void NL0exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = -960*cos(2.0*x);
+        // phys[index] = -960*cos(2.0*x);
+        // phys[index] = -560*cos(2*x+y)-420*sin(2*x+y);
+        phys[index] = 160*cos(x+y);
+        // phys[index] = 560*cos(2*x+y) - 420*sin(2*x+y);
     }
 }
 
@@ -161,7 +174,7 @@ void p11exact(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = cos(2*x+y);
+        phys[index] = 1.4*cos(2*x+y);
     }
 }
 
@@ -174,7 +187,7 @@ void p12exact(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = -4*cos(2*x+y);
+        phys[index] = 1.4*sin(2*x+y);
     }
 }
 __global__
@@ -186,7 +199,7 @@ void p21exact(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = 0.8*sin(x+y);
+        phys[index] = 1.4*sin(2*x+y);
     }
 }
 
@@ -199,7 +212,7 @@ void h11exactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = -5.0*cos(x+y);
+        phys[index] = 1.4*cos(2*x+y);
     }
 }
 
@@ -325,7 +338,7 @@ int main(){
     int Nx = 512; // same as colin
     int Ny = 512;
     int Nxh = Nx/2+1;
-    Qreal Lx =  33 * 2 *M_PI;
+    Qreal Lx =  4 * 2 *M_PI;
     Qreal Ly = Lx;
     Qreal dx = Lx/Nx;
     Qreal dy = dx;
@@ -470,7 +483,7 @@ int main(){
     r1nonl_func(r1nonl, u, v, S, r1_curr, r2_curr, w_curr, h11, lambda, aux, aux1);
     r2nonl_func(r2nonl, u, v, S, r1_curr, r2_curr, w_curr, h12, lambda, aux, aux1); 
     wnonl_func(wnonl, h11,h12,p11,p12,p21,r1_curr,r2_curr,w_curr,u,v,Ra,S,Re, Er, lambda,aux,aux1);
-    // /************************************/
+    /************************************/
     // p11nonl_func(p11, r1_curr, h11, Ra, S, lambda, aux);
     // p12nonl_func(p12, r1_curr, r2_curr, h11, h12, Ra, S, lambda, aux);
     // p21nonl_func(p21, r1_curr, r2_curr, h11, h12, Ra, S, lambda, aux);
@@ -489,13 +502,19 @@ int main(){
     // FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, -2.0, wnonl->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
     // // SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,aux->spec,-2.0,wnonl->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
     // cuda_error_func(cudaDeviceSynchronize());
-    // field_visual(aux, "first.csv");
+    // field_visual(wnonl, "first.csv");
     // //Dyy(p21)
     // // yyDerivD<<<mesh->dimGridsp, mesh->dimBlocksp>>>(p21->spec, aux->spec, mesh->kx, mesh->Nxh, mesh->Ny, mesh->BSZ);
     // // wnonl.spec = Dxx(p12) - 2*Dxy(p11) - Dyy(p21)
     // // SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0,wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
     // yyDeriv(p21, aux);
-    // FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, aux->phys, -1.0,wnonl->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    // // FwdTrans(mesh,p21e->phys, p21e->spec);
+    // // yyDeriv(p21e, aux1);
+    // cuda_error_func(cudaDeviceSynchronize());
+    // field_visual(aux, "Dyy(p21).csv");
+    // // field_visual(aux1, "Dyy(p21)e.csv");
+    // FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, wnonl->phys, -1.0, aux->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    // cuda_error_func( cudaDeviceSynchronize() );
     // field_visual(wnonl, "second.csv");
     // // wnonl.spec = 1.0/(Re*Er)(Dxx(p12) - 2*Dxy(p11) - Dyy(p21))
     // // SpecMul<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, 1.0/(Re*Er), wnonl->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
@@ -505,9 +524,10 @@ int main(){
     // // wnonl.spec = 1.0/(Re*Er)(Dxx(p12) - 2*Dxy(p11) - Dyy(p21)) - (uDx(w)+vDy(w))
     // // SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0/(Re*Er),wnonl->spec,-1.0,aux->spec,wnonl->spec,mesh->Nxh, mesh->Ny, mesh->BSZ);
     // FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0/(Re*Er),wnonl->phys, -1.0, aux->phys, wnonl->phys, mesh->Nx, mesh->Ny, mesh->BSZ);
+    // cuda_error_func( cudaDeviceSynchronize() );
     // field_visual(wnonl, "third.csv");
     // FwdTrans(mesh, wnonl->phys, wnonl->spec);
-    // /***********************************/ 
+    /***********************************/ 
 
     BwdTrans(mesh,wnonl->spec,wnonl->phys);
     BwdTrans(mesh, p11->spec, p11->phys);

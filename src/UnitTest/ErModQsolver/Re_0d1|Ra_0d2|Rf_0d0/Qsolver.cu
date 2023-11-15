@@ -68,9 +68,11 @@ using std::endl;
 
 
 int main(){
+    int startpoint = 0;
+    InitType flag = Spec_init;
     // computation parameters
     int BSZ = 16;
-    int Ns = 20000;
+    int Ns = 40000;
     int Nx = 512; // same as colin
     int Ny = 512;
     int Nxh = Nx/2+1;
@@ -78,7 +80,7 @@ int main(){
     Qreal Ly = Lx;
     Qreal dx = Lx/Nx;
     Qreal dy = dx;
-    Qreal dt = 0.0001; // same as colin
+    Qreal dt = 0.001; // same as colin
     // Qreal a = 1.0;
 
     //////////////////////// variables definitions //////////////////////////
@@ -88,15 +90,12 @@ int main(){
     // to distinguish the Er we use in theis programe
     // we denotes the Er in paper as Er_n
     double Er_n = 0.1;
-    // Ra = ln/la, which the square of \tiled(alpha)
-    
-    double Rf = 7.5*0.00001;
-    double ln = 0.05;
-    double lc = ln;
-    double lf = sqrt(Rf);
-    double Ra = 0.025; 
-
-
+    // Ra = (ln/la)^2, which the square of \tiled(alpha), noted that it assumes to be negative
+    // and we assume to be positive 
+    double Ra = -0.2; 
+    // Rf = (ln/lf)^2, which we defines cf = lc/lf where lc = ln in prl.
+    // so cf = sqrt(Rf)
+    double Rf = 0.0;
     Qreal lambda = 0.1;
     
     // C_{cn} = lc/ln = 1.0 as colin set lc = ln.
@@ -105,8 +104,8 @@ int main(){
     // C_{cf} = lc/lf = ln/lf = sqrt(Rf)
     // Qreal cf = lc/lf;
     Qreal cf = sqrt(Rf);
-    Qreal Er = 0.1;
-    Qreal Re = 0.25;
+    Qreal Er = Er_n;
+    Qreal Re = Re_n;
 
     // by specially choosing the scales, colin makes the Pe equals to 1.0
     Qreal Pe = 1.0;
@@ -116,8 +115,10 @@ int main(){
     // *_new store the value of next time step 
 
     Mesh *mesh = new Mesh(BSZ, Nx, Ny, Lx, Ly);
+    cout << "start point: " << startpoint << endl;
     cout << "Re = " << Re << endl;
     cout << "Er = " << Er << endl;
+    cout << "Ra = " << Ra << endl;
     cout << "Pe = " << Pe << endl;
     cout << "cf = " << cf << endl;
     cout<< "Lx: " << mesh->Lx << " "<< "Ly: " << mesh->Ly << " " << endl;
@@ -151,7 +152,7 @@ int main(){
     wlin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wIFh, wIF, w_old->mesh->k_squared, Re, cf, dt, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
     
     // the precomputation function also updates the spectrum of corresponding variables
-    precompute_func(r1_old, r2_old, w_old, Phy_init);
+    precompute_func(r1_old, r2_old, w_old, flag);
     alpha_init(alpha->phys, Ra, dx, dy, Nx, Ny);
     FwdTrans(mesh, alpha->phys, alpha->spec);
     // prepare the referenced system
@@ -251,15 +252,15 @@ int main(){
 
         cout << "\r" << "t = " << m*dt << flush;
         }
-        if (m%200 == 0){
+        if (m%80 == 0){
             BwdTrans(mesh, r1_old->spec, r1_old->phys);
             BwdTrans(mesh, r2_old->spec, r2_old->phys);
             BwdTrans(mesh, w_old->spec, w_old->phys);
             cuda_error_func( cudaDeviceSynchronize() );
 
-            field_visual(r1_old, to_string(m)+"r1.csv");
-            field_visual(r2_old, to_string(m)+"r2.csv");
-            field_visual(w_old, to_string(m)+"w.csv");
+            field_visual(r1_old, to_string(m+startpoint)+"r1.csv");
+            field_visual(r2_old, to_string(m+startpoint)+"r2.csv");
+            field_visual(w_old, to_string(m+startpoint)+"w.csv");
             if (std::isnan(r1_old->phys[0])) {"NAN ";exit(0);}
         }
         // if(m%100 == 0) cout << "t = " << m*dt << endl;

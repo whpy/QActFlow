@@ -17,25 +17,38 @@ void vel_funcD(Qcomp* w_spec, Qcomp* u_spec, Qcomp* v_spec,
 void vel_func(Field *w, Field *u, Field *v);
 
 __global__
-void r1lin_func(Qreal* IFr1h, Qreal* IFr1, Qreal* k_squared, Qreal Pe, Qreal cn, Qreal dt, int Nxh, int Ny, int BSZ);
+void r1lin_func(Qreal* IFr1h, Qreal* IFr1, Qreal dt, int Nxh, int Ny, int BSZ);
 
 __global__
-void r2lin_func(Qreal* IFr2h, Qreal* IFr2, Qreal* k_squared, Qreal Pe, Qreal cn, Qreal dt, int Nxh, int Ny, int BSZ);
+void r2lin_func(Qreal* IFr2h, Qreal* IFr2, Qreal dt, int Nxh, int Ny, int BSZ);
 
 __global__
-void wlin_func(Qreal* IFwh, Qreal* IFw, Qreal* k_squared, Qreal Re, Qreal cf, Qreal dt, int Nxh, int Ny, int BSZ);
+void wlin_func(Qreal* IFwh, Qreal* IFw, Qreal* k_squared, Qreal Re, Qreal Rf, Qreal dt, int Nxh, int Ny, int BSZ);
 
 __global__ 
 void S_funcD(Qreal* r1, Qreal*r2, Qreal* S, int Nx, int Ny, int BSZ);
 void S_func(Field* r1, Field* r2, Field* S);
 
-void curr_func(Field *r1curr, Field *r2curr, Field *wcurr, Field *u, Field *v, Field *S);
+__global__
+void xxDerivD(Qcomp *f_spec, Qcomp *fxx_spec, Qreal *kx, int Nxh, int Ny, int BSZ);
+void xxDeriv(Field *f, Field* fxx);
+
+__global__
+void yyDerivD(Qcomp *f_spec, Qcomp *fyy_spec, Qreal *ky, int Nxh, int Ny, int BSZ);
+void yyDeriv(Field *f, Field* fyy);
+
+__global__
+void xyDerivD(Qcomp *f_spec, Qcomp *fxy_spec, Qreal *kx, Qreal *ky, int Nxh, int Ny, int BSZ);
+void xyDeriv(Field *f, Field* fxy);
+
+void convect(Field *convf, Field *f, Field *u, Field *v, Field *aux);
+void curr_func(Field *r1curr, Field *r2curr, Field *wcurr, Field *u, Field *v, Field *S, Field *h11, Field *h12);
 
 void r1nonl_func(Field *r1nonl, Field * u, Field * v, 
-Field *S, Field *r1, Field *r2, Field *w, Field *h11, Qreal lambda, Field *aux);
+Field *S, Field *r1, Field *r2, Field *w, Field *h11, Qreal lambda, Field *aux,Field *aux1);
 
 void r2nonl_func(Field *r2nonl, Field * u, Field * v, 
-Field *S, Field *r1, Field *r2, Field *w, Field *h12, Qreal lambda, Field *aux);
+Field *S, Field *r1, Field *r2, Field *w, Field *h12, Qreal lambda, Field *aux, Field *aux1);
 
 void wnonl_func(Field *wnonl, Field *h11,Field *h12, Field *p11, Field *p12, Field *p21, Field *r1, Field *r2, Field *w, 
                         Field *u, Field *v, Field *Ra, Field *S, Qreal Re, Qreal Er, Qreal lambda, Field *aux, Field *aux1);

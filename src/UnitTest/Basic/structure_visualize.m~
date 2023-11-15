@@ -7,14 +7,10 @@ for i = 1:length(namelist)
     load(namelist(i).name)
 end
 
-visual(e)
 visual(yyder- (-25*sin(2*x+5*y)-17*17*cos(3*x+17*y)),1,x,y)
-% to demonstrate the relative error indirectly
-% visual(yyder,6,x,y)
-% to verify that such operation in matlab is consistent with our
-% assumption. Here u1 represents the original tested function
+visual(yyder,6,x,y)
 visual(u1,2,x,y)
-visual(u1-(sin(2*x+5*y) + cos(3*x+17*y)),3,x,y)
+visual(u1-(sin(2*x+y) + cos(3*x+17*y)),3,x,y)
 visual(xxder-(-4*sin(2*x+5*y)-9*cos(3*x+17*y)),4,x,y)
 visual(xyder-(-10*sin(2*x+5*y)-3*17*cos(3*x+17*y)),5,x,y)
 % visual(yder-(5*cos(2*x+5*y)-17*sin(3*x+17*y)),6,x,y);

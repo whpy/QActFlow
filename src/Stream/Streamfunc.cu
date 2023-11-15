@@ -250,8 +250,6 @@ void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w,
     // (-\omega_z* r2)
     // aux.phys = -1*\omega*r2
     FldMul<<<dimGrid, dimBlock>>>(w->phys, r2->phys, -1.0, aux->phys, Nx, Ny, BSZ);
-    // cuda_error_func( cudaPeekAtLastError() );
-    // cuda_error_func( cudaDeviceSynchronize() );
     // r1nonl.phys = \lambda*S(x,y) * \partial_x u(x,y) + (-\omega_z* r2)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r1nonl->phys, 1.0, aux->phys, r1nonl->phys, Nx, Ny, BSZ);
 

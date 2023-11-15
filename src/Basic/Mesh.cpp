@@ -11,17 +11,27 @@ dy(pLx/pNy),alphax(2*M_PI/pLx),alphay(2*M_PI/pLy){
     cuda_error_func(cudaMallocManaged( &(this->k_squared), sizeof(Qreal)*(Ny*Nxh)));
     cuda_error_func(cudaMallocManaged( &(this->cutoff), sizeof(Qreal)*(Ny*Nxh)));
 
+    // kx initialization
+    // kx[i] = alphax*[0, 1, 2, 3,...,Nxh-1]
+    // alphax = 2pi/Lx
     for (int i=0; i<Nxh; i++)          
     {
         this->kx[i] = i*alphax;
     } 
+    // ky initialization
+    // ky[j] = alphay*[0, 1, 2, 3,...,Ny/2, -Ny/2+1, -Ny/2+2,...,-1]
+    // alphay = 2pi/Ly
     for (int j=0; j<Ny; j++)          
     {
-        if(j<+Nx/2+1)
-        this->ky[j] = j*alphay;
-        else 
-        this->ky[j] = (j-Ny)*alphay;
+        if(j<(Ny/2+1)){
+            this->ky[j] = j*alphay;
+            }
+        else {
+            this->ky[j] = (j-Ny)*alphay;
+            }
+        
     } 
+
     // the k^2 = kx^2+ky^2
     for (int j=0; j<Ny; j++){
         for (int i=0; i<Nxh; i++){
@@ -31,8 +41,8 @@ dy(pLx/pNy),alphax(2*M_PI/pLx),alphay(2*M_PI/pLy){
     }
 
     // set up the cutoff
-    int lowNy = Ny/4;
-    int lowNx = Nx/4;
+    int lowNy = Ny;
+    int lowNx = Nx;
     for (int j=0; j<Ny; j++){
         for (int i=0; i<Nxh; i++){
             int c = i + j*Nxh;

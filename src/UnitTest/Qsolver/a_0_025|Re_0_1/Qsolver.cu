@@ -80,7 +80,7 @@ int main(){
     Qreal Ly = Lx;
     Qreal dx = Lx/Nx;
     Qreal dy = dx;
-    Qreal dt = 0.001; // same as colin
+    Qreal dt = 0.0001; // same as colin
     // Qreal a = 1.0;
 
     //////////////////////// variables definitions //////////////////////////
@@ -257,7 +257,7 @@ int main(){
 
         cout << "\r" << "t = " << m*dt << flush;
         }
-        if (m%20 == 0){
+        if (m%200 == 0){
             BwdTrans(mesh, r1_old->spec, r1_old->phys);
             BwdTrans(mesh, r2_old->spec, r2_old->phys);
             BwdTrans(mesh, w_old->spec, w_old->phys);

@@ -1,7 +1,8 @@
 #include <Basic/QActFlow.h>
-#include <Basic/FldOp.hpp>
+#include <Basic/FldOp.cuh>
 #include <Basic/Field.h>
 #include <Basic/cuComplexBinOp.hpp>
+#include <Stream/StreamfuncModified.cuh>
 
 using namespace std;
 
@@ -12,7 +13,7 @@ __global__ void sin_func(Qreal* fp, Qreal dx, Qreal dy, int Nx, int Ny, int BSZ)
     if(i<Nx && j<Ny){
         Qreal x = i*dx;
         Qreal y = j*dy;
-        fp[index] = sin(x+y);
+        fp[index] = exp(sin(2*x+3*y));
     }
 }
 
@@ -74,6 +75,34 @@ int main(){
 
     FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, u->phys, -1.0, u->phys, v->phys, Nx, Ny, BSZ);
     field_visual(v ,"v1.csv");
+
+    yyDeriv(u,w);
+    // yDeriv(u->spec, w->spec, mesh);
+    // // BwdTrans(mesh, w->spec, w->phys);
+    // // cuda_error_func( cudaDeviceSynchronize());
+    // // field_visual(w, "yder.csv");
+    // yDeriv(w->spec, w->spec,mesh);
+    BwdTrans(mesh, w->spec, w->phys);
+    cuda_error_func( cudaDeviceSynchronize());
+    field_visual(w, "yyder.csv");
+
+    // xxDeriv(u,w);
+    xDeriv(u->spec, w->spec, mesh);
+    xDeriv(w->spec, w->spec,mesh);
+    BwdTrans(mesh, w->spec, w->phys);
+    cuda_error_func( cudaDeviceSynchronize());
+    field_visual(w, "xxder.csv");
+
+    xyDeriv(u,w);
+    // yDeriv(u->spec, w->spec, mesh);
+    // // BwdTrans(mesh, w->spec, w->phys);
+    // // cuda_error_func( cudaDeviceSynchronize());
+    // // field_visual(w, "yder.csv");
+    // xDeriv(w->spec, w->spec,mesh);
+    BwdTrans(mesh, w->spec, w->phys);
+    cuda_error_func( cudaDeviceSynchronize());
+    field_visual(w, "xyder.csv");
+
 
 
     return 0;

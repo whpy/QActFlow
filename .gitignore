@@ -2,5 +2,6 @@
 **/.VSCode*/*
 **/.vscode/*
 **/*.o
+**/*.out
 **/Makefile
 **/*.csv

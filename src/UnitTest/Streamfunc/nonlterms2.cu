@@ -19,7 +19,7 @@ void PhiinitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = sin(x+y);
+        phys[index] = sin(2*x+y);
     }
 }
 
@@ -31,8 +31,8 @@ void rinitD(Qreal* r1, Qreal* r2, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        r1[index] = sin(2*x);
-        r2[index] = cos(x);
+        r2[index] = sin(y+x);
+        r1[index] = cos(x+y);
     }
 }
 
@@ -45,7 +45,7 @@ void SexactD(Qreal* S, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        S[index] = 2*sqrt(cos(x)*cos(x)+sin(2*x)*sin(2*x));
+        S[index] = 2.0;
     }
 }
 
@@ -57,7 +57,7 @@ void wexactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = -2.0*sin(x+y);
+        phys[index] = -5.0*sin(2*x+y);
     }
 }
 
@@ -70,7 +70,7 @@ void uexactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = -cos(x+y);
+        phys[index] = -cos(2*x+y);
     }
 }
 __global__
@@ -82,7 +82,7 @@ void vexactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = cos(x+y);
+        phys[index] = 2*cos(2*x+y);
     }
 }
 
@@ -95,9 +95,7 @@ void NL1exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = 2*cos(2*x)*cos(x+y) + 
-        2*( cos(x) + lambda*sqrt(cos(x)*cos(x) + sin(2*x)*sin(2*x)) )*sin(x+y) +
-        (8*cos(x)*cos(x)*cos(x)*(-4*sin(x)+sin(3*x))*cn*cn)/Pe ;
+        phys[index] = -5*cos(x+y)+cos(2*x+y)*sin(x+y) + 5.0*(0.08+sin(x+y))*sin(2*x+y);
     }
 }
 
@@ -110,9 +108,7 @@ void NL2exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = -1.0*cos(x+y)*sin(x) - 
-                        2*sin(2*x)*sin(x+y) + 
-                        (4.0*cos(x)*cos(x)*cos(x)*(-3.0+2*cos(2*x))*cn*cn)/Pe;
+        phys[index] = -5*sin(x+y)-0.3*sin(2*x+y)-cos(x+y)*(cos(2*x+y) + 5*sin(2*x+y));
     }
 }
 
@@ -124,7 +120,7 @@ void NL0exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal Er, Qreal Re, Qreal cn,
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = -1.0*cos(x)*(1+2*lambda+6*lambda*cn*cn)/(Er*Re);
+        phys[index] = -160*cos(x+y);
     }
 }
 
@@ -275,7 +271,7 @@ void print_phys(Field* f){
     }
 }
 
-;void coord(Mesh &mesh){
+void coord(Mesh &mesh){
     ofstream xcoord("x.csv");
     ofstream ycoord("y.csv");
     for (int j=0; j<mesh.Ny; j++){
@@ -309,11 +305,11 @@ int main(){
     Qreal Ly = 2*M_PI;
     Qreal dx = 2*M_PI/Nx;
     Qreal dy = 2*M_PI/Ny;
-    Qreal lambda = 0.5;
-    Qreal cn = 0.1;
-    Qreal Pe = 0.3;
-    Qreal Re = 5.0;
-    Qreal Er = 6.0;
+    Qreal lambda = 0.1;
+    Qreal cn = 1.0;
+    Qreal Pe = 1.0;
+    Qreal Re = 0.1;
+    Qreal Er = 0.1;
     Qreal dt = 0.05; // same as colin
     Qreal a = 1.0;
 
