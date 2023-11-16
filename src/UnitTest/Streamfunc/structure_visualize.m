@@ -9,11 +9,14 @@ end
 
 
 visual(nl0a-nl0, 9, x, y)
-
+figure(9)
+title("w")
 visual(nl1a-nl1, 10, x, y)
-
+figure(10)
+title("r1")
 visual(nl2a-nl2, 11, x, y)
-
+figure(11)
+title("r2")
 
 % visual(1.15349*p12a-p12, 12, x, y)
 % visual(1.15349*p21a-p21, 13, x, y)
