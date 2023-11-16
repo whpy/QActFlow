@@ -8,16 +8,13 @@ for i = 1:length(namelist)
 end
 
 
-visual(nl0a-nl0, 9, x, y)
+visual(1.15349*nl0a-nl0, 9, x, y)
 
 visual(nl1a-nl1, 10, x, y)
 
 visual(nl2a-nl2, 11, x, y)
 
 
-% visual(1.15349*p12a-p12, 12, x, y)
-% visual(1.15349*p21a-p21, 13, x, y)
-% visual(1.15349*p11a-p11, 14, x, y)
 function visual(f,n,x,y)
     figure(n)
     contourf(x,y,f,20,"linestyle","none")

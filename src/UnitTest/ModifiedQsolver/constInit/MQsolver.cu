@@ -77,9 +77,9 @@ int main(){
         integrate_func0(w_old, w_curr, w_new, wIF, wIFh, dt);
         integrate_func0(r1_old, r1_curr, r1_new, r1IF, r1IFh, dt);
         integrate_func0(r2_old, r2_curr, r2_new, r2IF, r2IFh, dt);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         
         curr_func(r1_curr, r2_curr, w_curr, u, v, S, h11, h12);
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, 
@@ -90,9 +90,9 @@ int main(){
         integrate_func1(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func1(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
        
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         curr_func(r1_curr, r2_curr, w_curr, u, v, S, h11, h12);
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, 
         r1_curr, r2_curr, w_curr, u, v, Ra, S, Re, Er, lambda, aux, aux1);
@@ -102,9 +102,9 @@ int main(){
         integrate_func2(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func2(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
         
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         curr_func(r1_curr, r2_curr, w_curr, u, v, S, h11, h12);
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, 
         r1_curr, r2_curr, w_curr, u, v, Ra, S, Re, Er, lambda, aux, aux1);
@@ -114,9 +114,9 @@ int main(){
         integrate_func3(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func3(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
         
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         curr_func(r1_curr, r2_curr, w_curr, u, v, S, h11, h12);
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, 
         r1_curr, r2_curr, w_curr, u, v, Ra, S, Re, Er, lambda, aux, aux1);
@@ -135,6 +135,9 @@ int main(){
 
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r2_old->spec, r2_new->spec, 
         r2_old->mesh->Nxh, r2_old->mesh->Ny, r2_old->mesh->BSZ);
+        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_old->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_old->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_old->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
 
         if (m%10 == 0) {
 

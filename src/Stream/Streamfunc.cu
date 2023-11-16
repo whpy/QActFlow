@@ -290,8 +290,6 @@ void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w,
     // the spectral of r1 nonlinear term is calculated here based on the physical value
     // that evaluated before.
     FwdTrans(r1nonl->mesh, r1nonl->phys, r1nonl->spec);
-    // cuda_error_func( cudaPeekAtLastError() );
-    // cuda_error_func( cudaDeviceSynchronize());
 }
 
 void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w, 
@@ -299,9 +297,7 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     // non-linear for r2: 
     // \lambda* S* 1/2* (D_x(v)+D_y(u)) + (\omega_z* r1) + (-cn^2/Pe *S^2*r2)
     // + (-1* u* D_x(r2))) + (-1*v*D_y(r2))
-    int Nx = r2nonl->mesh->Nx;
-    int Ny = r2nonl->mesh->Ny;
-    int BSZ = r2nonl->mesh->BSZ;
+    int Nx = r2nonl->mesh->Nx; int Ny = r2nonl->mesh->Ny; int BSZ = r2nonl->mesh->BSZ;
     dim3 dimGrid = r2nonl->mesh->dimGridp; dim3 dimBlock = r2nonl->mesh->dimBlockp;
 
     // \lambda* S* 1/2* (D_x(v))
@@ -309,10 +305,8 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     xDeriv(v->spec, aux->spec, r2nonl->mesh);
     //aux.phys = (D_x(v))
     BwdTrans(aux->mesh, aux->spec, aux->phys);
-    // r2nonl.phys = \lambda*S(x,y) * aux = \lambda/2 *S(x,y) * D_x(v(x,y)) 
+    // r2nonl.phys = 0.5\lambda*S(x,y) * aux = \lambda/2 *S(x,y) * D_x(v(x,y)) 
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, S->phys, lambda*0.5, r2nonl->phys, Nx, Ny, BSZ);
-    // cuda_error_func( cudaPeekAtLastError() );
-    // cuda_error_func( cudaDeviceSynchronize() );
 
     // \lambda* S* 1/2 *(D_y(u))
     //aux.spec = D_y(u)
@@ -323,14 +317,11 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, S->phys, lambda*0.5, aux->phys, Nx, Ny, BSZ);
     // r2nonl.phys = r2nonl.phys + aux.phys = 1/2*\lambda *S(x,y) *D_x(v(x,y)) + 1/2*\lambda *S(x,y) * D_y(u(x,y)) 
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, Nx, Ny, BSZ);
-    // cuda_error_func( cudaPeekAtLastError() );
-    // cuda_error_func( cudaDeviceSynchronize() );
 
-    // (\omega_z* r1)
+
+    // aux.phys = (\omega_z* r1)
     // aux.phys = 1.0* \omega*r1
     FldMul<<<dimGrid, dimBlock>>>(w->phys, r1->phys, 1.0, aux->phys, Nx, Ny, BSZ);
-    // cuda_error_func( cudaPeekAtLastError() );
-    // cuda_error_func( cudaDeviceSynchronize() );
     // r2nonl.phys = (\lambda/2 *S(x,y) *D_x(u(x,y))) + (\lambda/2 *S(x,y) * D_x(u(x,y))) + (\omega_z* r1)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, Nx, Ny, BSZ);
 
@@ -341,8 +332,6 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     FldMul<<<dimGrid, dimBlock>>>(aux->phys, r2->phys, 1.0, aux->phys, Nx, Ny, BSZ);
     // r1nonl.phys = (\lambda/2 *S(x,y) *D_x(u(x,y))) + (\lambda/2 *S(x,y) * D_x(u(x,y))) + (\omega_z* r2) + (-1*cn^2/Pe*S*S*r2)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, r2nonl->phys, 1.0, aux->phys, r2nonl->phys, Nx, Ny, BSZ);
-    // cuda_error_func( cudaPeekAtLastError() );
-    // cuda_error_func( cudaDeviceSynchronize() );
 
     //(-u*D_x(r2))
     // aux.spec = i*kx*r2
@@ -371,8 +360,6 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     // the spectral of r1 nonlinear term is calculated here based on the physical value
     // that evaluated before.
     FwdTrans(r2nonl->mesh, r2nonl->phys, r2nonl->spec);
-    // cuda_error_func( cudaPeekAtLastError() );
-    // cuda_error_func( cudaDeviceSynchronize());
 }
 
 
@@ -388,7 +375,6 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     p12nonl_func(p12, aux, aux1, r1, r2, S, alpha, lambda, cn); 
     p21nonl_func(p21, aux, aux1, r1, r2, S, alpha, lambda, cn); 
     
-    // cuda_error_func( cudaDeviceSynchronize() );
     // aux.spec = D_x(p12)
     xDeriv(p12->spec, aux->spec, p12->mesh);
     // wnonl.spec = D^2_xx(p12)
@@ -422,6 +408,7 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     FldMul<<<mesh->dimGridp, mesh->dimBlockp>>>(aux->phys, u->phys, -1.0, aux->phys, Nx, Ny, BSZ);
     // forward to the spectral: aux.spec = Four((-1* u* D_x(w)))
     FwdTrans(aux->mesh, aux->phys, aux->spec);
+    
     // wnonl.spec = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))  + aux.spec 
     // = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21)) + (-1* u* D_x(w))
     SpecAdd<<<mesh->dimGridsp, mesh->dimBlocksp>>>(1.0, wnonl->spec, 1.0, aux->spec, 
@@ -441,7 +428,6 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     wnonl->spec, wnonl->mesh->Nxh, wnonl->mesh->Ny, BSZ);
     
     // dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wnonl->spec, mesh->cutoff, Nxh, Ny, BSZ);
-    // cuda_error_func( cudaDeviceSynchronize() );
     
     // here the wnonl has updated sucessfully
     

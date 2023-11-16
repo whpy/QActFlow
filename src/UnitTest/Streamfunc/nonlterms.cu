@@ -6,10 +6,9 @@
 
 using namespace std;
 
-// \phi = cos(3x)*sin(4y)
-// w = Laplacian(\phi) = -25*cos(3x)*sin(4y)
-// u = -1*Dy(\phi) = -4*cos(3x)*cos(4y)
-// v = Dx(\phi) = -3*sin(3x)*sin(4y)
+// \phi = sin(x+y)
+// r1 = cos(x+y)
+// r2 = sin(x+y)
 
 __global__
 void PhiinitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
@@ -31,11 +30,47 @@ void rinitD(Qreal* r1, Qreal* r2, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        r1[index] = sin(x);
-        r2[index] = cos(x);
+        r1[index] = cos(x+y);
+        r2[index] = sin(x+y);
+    }
+}
+__global__
+void NL1exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+    int i = blockIdx.x * BSZ + threadIdx.x;
+    int j = blockIdx.y * BSZ + threadIdx.y;
+    int index = i + j*Nx;
+    Qreal x = i*dx;
+    Qreal y = j*dy;
+    // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
+    if (i<Nx && j<Ny){
+        phys[index] = 2.0*sin(x+y)*(lambda + sin(x+y)) - (4*cos(x+y)*cn*cn)/Pe;
     }
 }
 
+__global__
+void NL2exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+    int i = blockIdx.x * BSZ + threadIdx.x;
+    int j = blockIdx.y * BSZ + threadIdx.y;
+    int index = i + j*Nx;
+    Qreal x = i*dx;
+    Qreal y = j*dy;
+    // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
+    if (i<Nx && j<Ny){
+        phys[index] = -1.0*2*sin(x+y)*( (Pe*cos(x+y)) + 2*cn*cn )/Pe;
+    }
+}
+
+__global__
+void NL0exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal Er, Qreal Re, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
+    int i = blockIdx.x * BSZ + threadIdx.x;
+    int j = blockIdx.y * BSZ + threadIdx.y;
+    int index = i + j*Nx;
+    Qreal x = i*dx;
+    Qreal y = j*dy;
+    if (i<Nx && j<Ny){
+        phys[index] = 2*cos(x+y)*(1+4*lambda+6*lambda*cn*cn)/(Er*Re);
+    }
+}
 // S = 2*sqrt(r1^2+r2^2) = 2
 __global__
 void SexactD(Qreal* S, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
@@ -86,44 +121,7 @@ void vexactD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     }
 }
 
-__global__
-void NL1exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
-    int i = blockIdx.x * BSZ + threadIdx.x;
-    int j = blockIdx.y * BSZ + threadIdx.y;
-    int index = i + j*Nx;
-    Qreal x = i*dx;
-    Qreal y = j*dy;
-    // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
-    if (i<Nx && j<Ny){
-        phys[index] = 0.5*( cos(y) + cos(2*x+y) +
-        4.0*(lambda+cos(x))*sin(x+y) - 8.0*sin(x)*cn*cn/Pe );
-    }
-}
 
-__global__
-void NL2exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
-    int i = blockIdx.x * BSZ + threadIdx.x;
-    int j = blockIdx.y * BSZ + threadIdx.y;
-    int index = i + j*Nx;
-    Qreal x = i*dx;
-    Qreal y = j*dy;
-    // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
-    if (i<Nx && j<Ny){
-        phys[index] = -1.0*sin(x)*( cos(x+y) + 2.0*sin(x+y) ) - 4*cos(x)*cn*cn/Pe;
-    }
-}
-
-__global__
-void NL0exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal Er, Qreal Re, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
-    int i = blockIdx.x * BSZ + threadIdx.x;
-    int j = blockIdx.y * BSZ + threadIdx.y;
-    int index = i + j*Nx;
-    Qreal x = i*dx;
-    Qreal y = j*dy;
-    if (i<Nx && j<Ny){
-        phys[index] = -1.0*cos(x)*(1+2*lambda+6*lambda*cn*cn)/(Er*Re);
-    }
-}
 
 __global__
 void Single1exact(Qreal* phys, Qreal lambda, Qreal cn, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
@@ -307,10 +305,10 @@ int main(){
     Qreal dx = 2*M_PI/Nx;
     Qreal dy = 2*M_PI/Ny;
     Qreal lambda = 0.5;
-    Qreal cn = 0.1;
-    Qreal Pe = 0.3;
-    Qreal Re = 5.0;
-    Qreal Er = 6.0;
+    Qreal cn = 1.0;
+    Qreal Pe = 1.0;
+    Qreal Re = 1.0;
+    Qreal Er = 1.0;
     Qreal dt = 0.05; // same as colin
     Qreal a = 1.0;
 
@@ -456,6 +454,8 @@ int main(){
     xDeriv(aux->spec, aux->spec, mesh);
     dealiasing_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(aux->spec, mesh->cutoff, Nxh, Ny, BSZ); 
     BwdTrans(nl0->mesh, nl0->spec, nl0->phys);
+    BwdTrans(nl1->mesh, nl1->spec, nl1->phys);
+    BwdTrans(nl2->mesh, nl2->spec, nl2->phys);
     cuda_error_func( cudaDeviceSynchronize() );
     field_visual(nl1, "nl1.csv");
     field_visual(nl2, "nl2.csv");

@@ -36,8 +36,9 @@ ModTimeInt:
 	$(NVCC) -I $(INC) -c $(SRC)/Basic/Mesh.cpp
 	$(NVCC) -I $(INC) -c $(SRC)/Basic/FldOp.cu
 	$(NVCC) -I $(INC) -c $(SRC)/TimeIntegration/RK4.cu
+	$(NVCC) -I $(INC) -c $(SRC)/Stream/StreamfuncModified.cu
 	$(NVCC) -I $(INC) -c ModTimeInt.cu
-	$(NVCC) -o ModTimeInt.out ModTimeInt.o FldOp.o Field.o Mesh.o RK4.o -lcufft
+	$(NVCC) -o ModTimeInt.out ModTimeInt.o StreamfuncModified.o FldOp.o Field.o Mesh.o RK4.o -lcufft
 
 .PHONY: clean
 clean:

@@ -189,9 +189,9 @@ void r1lin_func(Qreal* IFr1h, Qreal* IFr1, Qreal dt, int Nxh, int Ny, int BSZ)
     double alpha1 = 0.0;
     if(i<Nxh && j<Ny){
         // IFr1h[index] = exp( alpha1*dt/2);
-        IFr1h[index] = exp( alpha1*dt/2);
+        IFr1h[index] = 1.0;
         // IFr1[index] = exp( alpha1*dt);
-        IFr1[index] = exp( alpha1*dt);
+        IFr1[index] = 1.0;
     }
 }
 
@@ -211,14 +211,14 @@ void r2lin_func(Qreal* IFr2h, Qreal* IFr2, Qreal dt, int Nxh, int Ny, int BSZ)
 }
 
 __global__
-void wlin_func(Qreal* IFwh, Qreal* IFw, Qreal* k_squared, Qreal Re, Qreal cf, Qreal dt, int Nxh, int Ny, int BSZ)
+void wlin_func(Qreal* IFwh, Qreal* IFw, Qreal* k_squared, Qreal Re, Qreal Rf, Qreal dt, int Nxh, int Ny, int BSZ)
 {
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
-    //L(w) = 1/Re*(Laplacian(w) -cf*cf*w)
-    // alpha0 = 1/Re*( -k_squared - cf*cf)
-    Qreal alpha0 = 1.0/Re * (-1.0*k_squared[index] - cf*cf);
+    //L(w) = 1/Re*(Laplacian(w) - Rf*w)
+    // alpha0 = 1/Re*( -k_squared - Rf)
+    Qreal alpha0 = 1.0/Re * (-1.0*k_squared[index] - Rf);
     if(i<Nxh && j<Ny){
         IFwh[index] = exp( alpha0 *dt/2);
         IFw[index] = exp( alpha0 *dt);

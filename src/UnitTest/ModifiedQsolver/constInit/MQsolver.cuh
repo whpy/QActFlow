@@ -1,12 +1,6 @@
 #ifndef __MQSOLVER_CUH
 #define __MQSOLVER_CUH
 
-
-
-
-
-
-
 #include <Basic/QActFlow.h>
 #include <Basic/FldOp.cuh>
 #include <Basic/Field.h>
@@ -77,7 +71,7 @@ void r1p_init(Qreal *r1, Qreal dx, Qreal dy, int Nx, int Ny){
             int index = i+j*Nx;
             float x = dx*i;
             float y = dy*j;
-            r1[index] = 0.1*cos(x+y) + 0.0001*(double(rand())/RAND_MAX-0.5);
+            r1[index] = 0.001 + 0.0001*(double(rand())/RAND_MAX-0.5);
         }
     }
 }
@@ -88,7 +82,7 @@ void r2p_init(Qreal *r2, Qreal dx, Qreal dy, int Nx, int Ny){
             int index = i+j*Nx;
             float x = dx*i;
             float y = dy*j;
-            r2[index] = 0.1*cos(x+y) + 0.0001*(double(rand())/RAND_MAX-0.5);
+            r2[index] = 0.001 + 0.0001*(double(rand())/RAND_MAX-0.5);
         }
     }
 }
@@ -97,7 +91,7 @@ void wp_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny){
     for (int j=0; j<Ny; j++){
         for (int i=0; i<Nx; i++){
             int index = i+j*Nx;
-            w[index] = 0.000;
+            w[index] = 0.0000;
         }
     }
 }

@@ -15,7 +15,7 @@ nonlterms:
 	$(NVCC) -I $(INC) -c $(SRC)/Basic/FldOp.cu
 	$(NVCC) -I $(INC) -c $(SRC)/Stream/Streamfunc.cu
 	$(NVCC) -I $(INC) -c nonlterms.cu
-	$(NVCC) -o main nonlterms.o Field.o Mesh.o FldOp.o Streamfunc.o -lcufft
+	$(NVCC) -o nonlterms.out nonlterms.o Field.o Mesh.o FldOp.o Streamfunc.o -lcufft
 
 nonlterms2:
 	$(NVCC) -I $(INC) -c $(SRC)/Basic/Field.cpp
@@ -23,7 +23,15 @@ nonlterms2:
 	$(NVCC) -I $(INC) -c $(SRC)/Basic/FldOp.cu
 	$(NVCC) -I $(INC) -c $(SRC)/Stream/Streamfunc.cu
 	$(NVCC) -I $(INC) -c nonlterms2.cu
-	$(NVCC) -o main nonlterms2.o Field.o Mesh.o FldOp.o Streamfunc.o -lcufft
+	$(NVCC) -o nonlterms2.out nonlterms2.o Field.o Mesh.o FldOp.o Streamfunc.o -lcufft
+
+nonlterms3:
+	$(NVCC) -I $(INC) -c $(SRC)/Basic/Field.cpp
+	$(NVCC) -I $(INC) -c $(SRC)/Basic/Mesh.cpp
+	$(NVCC) -I $(INC) -c $(SRC)/Basic/FldOp.cu
+	$(NVCC) -I $(INC) -c $(SRC)/Stream/Streamfunc.cu
+	$(NVCC) -I $(INC) -c nonlterms3.cu
+	$(NVCC) -o nonlterms3.out nonlterms3.o Field.o Mesh.o FldOp.o Streamfunc.o -lcufft
 
 crossterm:
 	$(NVCC) -I $(INC) -c $(SRC)/Basic/Field.cpp
@@ -35,4 +43,4 @@ crossterm:
 
 .PHONY: clean
 clean:
-	rm *.o main *.csv
+	rm *.o main *.csv *.out

@@ -1,0 +1,4 @@
+in this lab, we try to init the init cond of r1 and r2 with 
+random number between [-0.1,0.1] plus a base 0.24. We assumes that
+the instability of the beginning may be due to the unsmooth of random 
+initialization

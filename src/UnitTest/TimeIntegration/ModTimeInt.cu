@@ -134,10 +134,10 @@ int main(){
     Qreal Ly = Lx;
     Qreal dx = Lx/Nx;
     Qreal dy = dx;
-    Qreal dt = 0.001; // same as colin
+    Qreal dt = 0.0005; // same as colin
 
     // non-dimensional number
-    Qreal Re = 0.1;
+    Qreal Re = 0.2;
     Qreal Er = 0.1;
     Qreal Rf = 7.5 * 0.00001;
     Qreal lambda = 0.1;
@@ -227,7 +227,7 @@ int main(){
     field_visual(r2_curr, "I1r2.csv");
     r1nonl_func(r1nonl, u, v, S, r1_curr, r2_curr, w_curr, h11, lambda, aux, aux1);
     r2nonl_func(r2nonl, u, v, S, r1_curr, r2_curr, w_curr, h12, lambda, aux, aux1); 
-    wnonl_func(wnonl, h11,h12,p11,p12,p21,r1_curr,r2_curr,w_curr,u,v,Ra,S,Re, Er, lambda,aux,aux1);
+    wnonl_func(wnonl, h11,h12,p11,p12,p21,r1_curr,r2_curr,w_curr, u, v, Ra, S, Re, Er, lambda,aux,aux1);
     BwdTrans(mesh,wnonl->spec,wnonl->phys);
     BwdTrans(mesh,r1nonl->spec,r1nonl->phys);
     BwdTrans(mesh,r2nonl->spec,r2nonl->phys);
@@ -332,6 +332,13 @@ int main(){
     mesh->Nxh, mesh->Ny, mesh->BSZ);
     SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r1_old->spec, r1_new->spec, 
     mesh->Nxh, mesh->Ny, mesh->BSZ);
-
+    
+    BwdTrans(mesh, w_old->spec, w_old->phys);
+    BwdTrans(mesh, r1_old->spec, r1_old->phys);
+    BwdTrans(mesh, r2_old->spec, r2_old->phys);
+    cuda_error_func( cudaDeviceSynchronize() );
+    field_visual(w_old, "wnew.csv");
+    field_visual(r1_old, "r1new.csv");
+    field_visual(r2_old, "r2new.csv");
     return 0;
 }

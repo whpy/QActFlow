@@ -6,9 +6,9 @@
 
 using namespace std;
 
-// \phi = sin(2*x+y)
-// r1 = cos(x+y)
-// r2 = sin(x+y)
+// \phi = sin(17*x+3*y)
+// r1 = cos(5*x+y)
+// r2 = sin(5*x+y)
 
 __global__
 void PhiinitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
@@ -18,7 +18,7 @@ void PhiinitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = sin(2*x+y);
+        phys[index] = sin(17*x+3*y);
     }
 }
 
@@ -30,8 +30,8 @@ void rinitD(Qreal* r1, Qreal* r2, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        r1[index] = cos(x+y);
-        r2[index] = sin(x+y);
+        r1[index] = cos(5*x+y);
+        r2[index] = sin(5*x+y);
     }
 }
 __global__
@@ -43,8 +43,11 @@ void NL1exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = 0.5*(5*cos(x) - 5*cos(3*x+2*y) - sin(x) + 8*lambda*sin(2*x+y) + sin(3*x+2*y) - 
-        8*cos(x+y)*cn*cn/Pe);
+        phys[index] = 149.0*cos(2.0*(6.0*x+y)) - 
+        149.0*cos(22.0*x+4.0*y) 
+        - sin(2.0*(6.0*x+y))
+        + 102*lambda*sin(17.*x+3.*y) + sin(22.*x+4.*y) 
+        - 4.0*cos(5*x+y)*cn*cn/Pe;
     }
 }
 
@@ -57,8 +60,8 @@ void NL2exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     Qreal y = j*dy;
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
-        phys[index] = 1/Pe * (-0.5*Pe*(cos(x) + cos(3*x+2*y) + 2*(3*lambda + 5*cos(x+y))*sin(2*x+y)) 
-        - 4*sin(x+y)*cn*cn);
+        phys[index] = -1./Pe*(Pe* (cos(2*(6*x+y)) + cos(22*x+4*y) + 2.*(140*lambda+149*cos(5*x+y))*sin(17*x+3*y)) 
+        + 4*sin(5*x+y)*cn*cn);
     }
 }
 
@@ -70,7 +73,9 @@ void NL0exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal Er, Qreal Re, Qreal cn,
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = cos(x+y)*(0.4+8*lambda+12*lambda*cn*cn)/(Re*Er);
+        phys[index] = 1.0/(Re*Er) * 60.0 *(0.03333333*cos(5*x+y) - 0.08*sin(5*x+y) 
+        + 8.66666667*lambda*cos(5*x+y) - 20.8*lambda*sin(5*x+y) + lambda*cos(5*x+y)*cn*cn
+        - 2.4*lambda*sin(5*x+y)*cn*cn);
     }
 }
 // S = 2*sqrt(r1^2+r2^2) = 2
