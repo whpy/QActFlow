@@ -55,7 +55,7 @@ __global__
     // Qreal* cutoff = pmesh->cutoff;
     // adjust the spectral to satisfy necessary constraints(symmetry, dealiasing only 
     // acts after the nonlinear operations)
-    symmetry_func<<<pmesh->dimGridsp, pmesh->dimBlocksp>>>(spec,Nxh, Ny, BSZ);
+    // symmetry_func<<<pmesh->dimGridsp, pmesh->dimBlocksp>>>(spec,Nxh, Ny, BSZ);
 
     cufft_error_func( cufftExecZ2D(pmesh->inv_transf, spec, phys));
     coeff<<<pmesh->dimGridp, pmesh->dimBlockp>>>(phys, Nx, Ny, BSZ);
