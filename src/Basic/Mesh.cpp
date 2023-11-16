@@ -53,7 +53,7 @@ dy(pLx/pNy),alphax(2*M_PI/pLx),alphay(2*M_PI/pLy){
                 cutoff[c] = 1.0;
             }
             else{
-                cutoff[c] = 0.0;
+                cutoff[c] = 1.0;
             }
         }
     }
