@@ -5,3 +5,8 @@ expediency, the alternative solution is replacing by double times y-deriv or
 combination of x-deri and y-deriv. Though the xxDeriv is reliable, but to be
 safe, we decided to replace all the double derivatives function by the measure
 we mentioned above.
+
+11/15/2023
+the unknown bug that function to maintain the symmetry of spectral space causes a series
+of covert bug while Fwd Bwd process especially on y-axis. so we temporarily disable such 
+function including the cutoff function(we set them all 1.0).
