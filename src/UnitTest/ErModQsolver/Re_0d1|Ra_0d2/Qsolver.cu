@@ -117,11 +117,12 @@ int main(){
     cout << "start point: " << startpoint << endl;
     cout << "Re = " << Re << "  "; cout << "Er = " << Er << endl;
     cout << "Pe = " << Pe << "  "; cout << "Ra = " << Ra << endl;
-    cout << "cf = " << cf << "  "; cout << "dt = " << dt << endl;
-    cout<< "Lx = " << mesh->Lx << " "<< "Ly = " << mesh->Ly << " " << endl;
-    cout<< "Nx = " << mesh->Nx << " "<< "Ny = " << mesh->Ny << " " << endl;
-    cout<< "dx = " << mesh->dx << " "<< "dy = " << mesh->dy << " " << endl;
-    cout<< "Nx*dx = " << mesh->Nx*mesh->dx << " "<< "Ny*dy = " << mesh->Ny*mesh->dy << " " << endl;
+    cout << "cf = " << cf << "  "; cout << "cn = " << cn << "  "; cout << "dt = " << dt << endl;
+    cout << "Lx = " << mesh->Lx << " "<< "Ly = " << mesh->Ly << " " << endl;
+    cout << "Nx = " << mesh->Nx << " "<< "Ny = " << mesh->Ny << " " << endl;
+    cout << "dx = " << mesh->dx << " "<< "dy = " << mesh->dy << " " << endl;
+    cout << "Nx*dx = " << mesh->Nx*mesh->dx << " "<< "Ny*dy = " << mesh->Ny*mesh->dy << " " << endl;
+    cout << "End time: Ns*dt = " << Ns*dt << endl;
     Field *w_old = new Field(mesh); Field *w_curr = new Field(mesh); Field *w_new = new Field(mesh);
     Field *r1_old = new Field(mesh); Field *r1_curr = new Field(mesh); Field *r1_new = new Field(mesh);
     Field *r2_old = new Field(mesh); Field *r2_curr = new Field(mesh); Field *r2_new = new Field(mesh);
@@ -212,6 +213,9 @@ int main(){
         integrate_func4(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func4(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
         curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
+        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         cuda_error_func( cudaDeviceSynchronize() );
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(w_old->spec, w_new->spec, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r1_old->spec, r1_new->spec, r1_old->mesh->Nxh, r1_old->mesh->Ny, r1_old->mesh->BSZ);
