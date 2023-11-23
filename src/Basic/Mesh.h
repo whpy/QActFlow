@@ -20,6 +20,14 @@ public:
     // filter to cut off the high frequencies
     Qreal* cutoff;
 
+    // denotes the size of different space
+    int physsize;
+    int specsize;
+    int wavesize;
+    // intermediate variables for forward and backward operation
+    Qreal* mphys;
+    Qcomp* mspec;
+
     cufftHandle transf;
     cufftHandle inv_transf;
 

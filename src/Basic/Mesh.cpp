@@ -6,6 +6,11 @@ dy(pLx/pNy),alphax(2*M_PI/pLx),alphay(2*M_PI/pLy){
     cufft_error_func( cufftPlan2d( &(this->transf), Ny, Nx, CUFFT_D2Z ) );
     cufft_error_func( cufftPlan2d( &(this->inv_transf), Ny, Nx, CUFFT_Z2D ) );
 
+    physsize = Nx*Ny*sizeof(Qreal);
+    specsize = Ny*Nxh*sizeof(Qcomp);
+    wavesize = Ny*Nxh*sizeof(Qreal);
+    cuda_error_func( cudaMallocManaged( &(this->mphys), physsize) );
+    cuda_error_func( cudaMallocManaged( &(this->mspec), specsize) );
     cuda_error_func(cudaMallocManaged( &(this->kx), sizeof(Qreal)*(Nx)));
     cuda_error_func(cudaMallocManaged( &(this->ky), sizeof(Qreal)*(Ny)));
     cuda_error_func(cudaMallocManaged( &(this->k_squared), sizeof(Qreal)*(Ny*Nxh)));
@@ -67,6 +72,8 @@ dy(pLx/pNy),alphax(2*M_PI/pLx),alphay(2*M_PI/pLy){
     dimBlocksp = dim3(BSZ, BSZ);
 }
 Mesh::~Mesh(){
+    cuda_error_func(cudaFree(this->mphys));
+    cuda_error_func(cudaFree(this->mspec));
     cuda_error_func(cudaFree(this->kx));
     cuda_error_func(cudaFree(this->ky));
     cuda_error_func(cudaFree(this->k_squared));

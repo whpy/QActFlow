@@ -13,7 +13,8 @@ __global__ void sin_func(Qreal* fp, Qreal dx, Qreal dy, int Nx, int Ny, int BSZ)
     if(i<Nx && j<Ny){
         Qreal x = i*dx;
         Qreal y = j*dy;
-        fp[index] = exp(sin(2*x+3*y));
+        // fp[index] = exp(sin(2*x+3*y));
+        fp[index] = exp(sin(x+y));
     }
 }
 
@@ -49,8 +50,8 @@ void field_visual(Field *f, string name){
 int main(){
     int BSZ = 16;
     int Ns = 1000;
-    int Nx = 512; // same as colin
-    int Ny = 512;
+    int Nx = 8; // same as colin
+    int Ny = Nx;
     int Nxh = Nx/2+1;
     Qreal Lx = 2*M_PI;
     Qreal Ly = 2*M_PI;
@@ -76,7 +77,9 @@ int main(){
     FldAdd<<<mesh->dimGridp,mesh->dimBlockp>>>(1.0, u->phys, -1.0, u->phys, v->phys, Nx, Ny, BSZ);
     field_visual(v ,"v1.csv");
 
-    yyDeriv(u,w);
+    // yyDeriv(u,w);
+    yDeriv(u->spec, w->spec, mesh);
+    yDeriv(w->spec, w->spec, mesh);
     // yDeriv(u->spec, w->spec, mesh);
     // // BwdTrans(mesh, w->spec, w->phys);
     // // cuda_error_func( cudaDeviceSynchronize());
@@ -93,8 +96,9 @@ int main(){
     cuda_error_func( cudaDeviceSynchronize());
     field_visual(w, "xxder.csv");
 
-    xyDeriv(u,w);
-    // yDeriv(u->spec, w->spec, mesh);
+    // xyDeriv(u,w);
+    yDeriv(u->spec, w->spec, mesh);
+    xDeriv(w->spec, w->spec,mesh);
     // // BwdTrans(mesh, w->spec, w->phys);
     // // cuda_error_func( cudaDeviceSynchronize());
     // // field_visual(w, "yder.csv");

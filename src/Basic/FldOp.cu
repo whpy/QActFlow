@@ -43,7 +43,8 @@ __global__
 
 //update the spectral space based on the value in physical space
  void FwdTrans(Mesh* pmesh, Qreal* phys, Qcomp* spec){
-    cufft_error_func( cufftExecD2Z(pmesh->transf, phys, spec));
+    cudaMemcpy(pmesh->mphys, phys, pmesh->physsize, cudaMemcpyHostToHost);
+    cufft_error_func( cufftExecD2Z(pmesh->transf, pmesh->mphys, spec));
 }
 
 //update the physics space based on the value in spectral space
@@ -56,8 +57,8 @@ __global__
     // adjust the spectral to satisfy necessary constraints(symmetry, dealiasing only 
     // acts after the nonlinear operations)
     // symmetry_func<<<pmesh->dimGridsp, pmesh->dimBlocksp>>>(spec,Nxh, Ny, BSZ);
-
-    cufft_error_func( cufftExecZ2D(pmesh->inv_transf, spec, phys));
+    cudaMemcpy(pmesh->mspec, spec, pmesh->specsize, cudaMemcpyHostToHost);
+    cufft_error_func( cufftExecZ2D(pmesh->inv_transf, pmesh->mspec ,phys));
     coeff<<<pmesh->dimGridp, pmesh->dimBlockp>>>(phys, Nx, Ny, BSZ);
     // in the referenced source code, they seem a little bit abuse synchronization, this
     // may be a point that we could boost the performance in the future. we temporarily

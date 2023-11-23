@@ -22,7 +22,7 @@ void PhiinitD(Qreal* phys, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = 1.;
+        phys[index] = sin(2*x + 3*y);
     }
 }
 
@@ -34,9 +34,9 @@ void rinitD(Qreal* r1, Qreal* r2, int Nx, int Ny, int BSZ, Qreal dx, Qreal dy){
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        r1[index] = sin(y)+1;
+        r1[index] = sin(x)*sin(x);
         // printf("%f \n",r1[index]);
-        r2[index] = sin(y)+1;
+        r2[index] = sin(x)*sin(x);
     }
 }
 __global__
@@ -49,8 +49,10 @@ void NL1exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
         // phys[index] = -4*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*cn*cn/Pe;
-        phys[index] = -8.0*(1+sin(y))*(1+sin(y))*(1+sin(y))*cn*cn/Pe;
-    }
+        // phys[index] = -8.0*(1+sin(y))*(1+sin(y))*(1+sin(y))*cn*cn/Pe;
+        phys[index] = 3*cos(2*x+3*y)*sin(2*x) + (13*sin(x)*sin(x) + 12*sqrt(2.0)*lambda*sin(x)*sin(x))*sin(2*x+3*y)
+        -8*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*cn*cn/Pe;
+    }   
 }
 
 __global__
@@ -63,7 +65,9 @@ void NL2exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal cn, int Nx, int Ny, int
     // Qreal s = exp(-1*( (x-M_PI)*(x-M_PI)+(y-M_PI)*(y-M_PI) ));
     if (i<Nx && j<Ny){
         // phys[index] = 0;
-        phys[index] = -8.0*(1+sin(y))*(1+sin(y))*(1+sin(y))*cn*cn/Pe;
+        // phys[index] = -8.0*(1+sin(y))*(1+sin(y))*(1+sin(y))*cn*cn/Pe;
+        phys[index] = 3*cos(2*x+3*y)*sin(2*x) + (-13*sin(x)*sin(x) + 5*sqrt(2.0)*lambda*sin(x)*sin(x))*sin(2*x+3*y)
+        -8*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*cn*cn/Pe;
     }
 }
 
@@ -75,7 +79,15 @@ void NL0exact(Qreal* phys, Qreal lambda, Qreal Pe, Qreal Er, Qreal Re, Qreal cn,
     Qreal x = i*dx;
     Qreal y = j*dy;
     if (i<Nx && j<Ny){
-        phys[index] = 0;
+        phys[index] = 1/(Er*Re*sin(x)*sin(x)) *
+        (-11.3137*lambda*cos(x)*cos(x)*cos(x)*cos(x)*sin(x)*sin(x)
+        - 33.9411*lambda*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)
+        -0.2*sin(x)*sin(x)*sin(x)*sin(x) 
+        + cos(x)*cos(x)*(135.765*lambda*sin(x)*sin(x)*sin(x)*sin(x) + 0.2*sin(x)*sin(x))
+        + lambda*sin(x)*sin(x)*sin(x)*sin(x)*
+        (11.3137*sin(x)*sin(x)-181.019*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)*sin(x)
+        + cos(x)*cos(x)*(-33.9411+1267.14*sin(x)*sin(x)*sin(x)*sin(x)))*cn*cn
+        );
     }
 }
 // S = 2*sqrt(r1^2+r2^2) = 2
