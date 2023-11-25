@@ -72,7 +72,7 @@ void r1p_init(Qreal *r1, Qreal dx, Qreal dy, int Nx, int Ny){
             float x = dx*i;
             float y = dy*j;
             // r1[index] = (float(rand())/RAND_MAX)-0.5;
-            r1[index] = 0.0001*(sin(y)*sin(y)-0.5);
+            r1[index] = -0.00001*(sin(0.1*x+0.2*y)*sin(0.1*x+0.2*y)-0.5);
         }
     }
 }
@@ -84,7 +84,7 @@ void r2p_init(Qreal *r2, Qreal dx, Qreal dy, int Nx, int Ny){
             float x = dx*i;
             float y = dy*j;
             // r2[index] = (float(rand())/RAND_MAX)-0.5;
-            r2[index] = 0.0001*sin(y)*cos(y);
+            r2[index] = 0.00001*cos(0.1*x+0.2*y)*sin(0.1*x+0.2*y);
         }
     }
 }
@@ -93,7 +93,9 @@ void wp_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny){
     for (int j=0; j<Ny; j++){
         for (int i=0; i<Nx; i++){
             int index = i+j*Nx;
-            w[index] = 0.000000;
+            float x = dx*i;
+            float y = dy*j;
+            w[index] = 3*cos(0.1*x)*sin(0.2*y);
         }
     }
 }

@@ -20,7 +20,9 @@ void init_func(Qreal* fp, Qreal dx, Qreal dy, int Nx, int Ny, int BSZ){
         Qreal x = i*dx;
         Qreal y = j*dy;
         // fp[index] = exp(-1.0* ((x-dx*Nx/2)*(x-dx*Nx/2) + (y-dy*Ny/2)*(y-dy*Ny/2)) );
-        fp[index] = -2*cos(x)*cos(y);
+        // fp[index] = -2*cos(x)*cos(y);
+        fp[index] = -40*exp( -1*(pow(x-2*M_PI,2) + pow(y-2*M_PI,2))/0.1 ) 
+        + 400*(pow(x-2*M_PI,2) + pow(y-2*M_PI,2))*exp( -1*(pow(x-2*M_PI,2) + pow(y-2*M_PI,2))/0.1 ) ;
     }
 }
 
@@ -45,7 +47,7 @@ Qreal dt, int Nxh, int Ny, int BSZ)
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
-    Qreal alpha = -1.0/Re *(k_squared[index]);
+    Qreal alpha = -1.0/Re *(k_squared[index]) - 0.1;
     if(i<Nxh && j<Ny){
         IFuh[index] = exp( alpha *dt/2);
         IFu[index] = exp( alpha *dt);
@@ -124,7 +126,7 @@ int main(){
     Qreal dt = 0.02; // same as colin
     // Qreal a = 1.0;
 
-    Qreal Re = 40;
+    Qreal Re = 0.1;
 
     // Fldset test
     // vortex fields

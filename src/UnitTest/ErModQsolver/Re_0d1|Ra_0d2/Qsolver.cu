@@ -3,75 +3,11 @@ using std::string;
 using std::cout; 
 using std::endl;
 
-
-
-// void r1_init(Qreal *r1, Qreal dx, Qreal dy, int Nx, int Ny){
-//     for (int j=0; j<Ny; j++){
-//         for (int i=0; i<Nx; i++){
-//             int index = i+j*Nx;
-//             float x = dx*i;
-//             float y = dy*j;
-//             r1[index] = (float(rand())/RAND_MAX)-0.5;
-//         }
-//     }
-// }
-
-// void r2_init(Qreal *r2, Qreal dx, Qreal dy, int Nx, int Ny){
-//     for (int j=0; j<Ny; j++){
-//         for (int i=0; i<Nx; i++){
-//             int index = i+j*Nx;
-//             float x = dx*i;
-//             float y = dy*j;
-//             r2[index] = (float(rand())/RAND_MAX)-0.5;
-//         }
-//     }
-// }
-
-
-// void w_init(Qreal *w, Qreal dx, Qreal dy, int Nx, int Ny){
-//     for (int j=0; j<Ny; j++){
-//         for (int i=0; i<Nx; i++){
-//             int index = i+j*Nx;
-//             w[index] = 0.000;
-//         }
-//     }
-// }
-
-// void alpha_init(Qreal *alpha, Qreal Ra, Qreal dx, Qreal dy, int Nx, int Ny){
-//     for (int j=0; j<Ny; j++){
-//         for (int i=0; i<Nx; i++){
-//             int index = i+j*Nx;
-//             alpha[index] = (Ra);
-//         }
-//     }
-// }
-// void precompute_func(Field* r1, Field* r2, Field* w, InitType flag){
-//     Mesh* mesh = r1->mesh;
-//     int Nx = mesh->Nx; int Ny = mesh->Ny;
-//     Qreal dx = mesh->dx; Qreal dy = mesh->dy;
-
-//     if (flag == Def_init){
-//         r1_init(r1->phys, dx, dy, Nx, Ny);
-//         r2_init(r2->phys, dx, dy, Nx, Ny);
-//         w_init(w->phys, dx, dy, Nx, Ny);
-//     }
-//     else if (flag == File_init){
-//         file_init("./init/r1_init.csv", r1);
-//         file_init("./init/r2_init.csv", r2);
-//         file_init("./init/w_init.csv", w);
-//     }
-
-//     FwdTrans(mesh, r1->phys, r1->spec);
-//     FwdTrans(mesh, r2->phys, r2->spec);
-//     FwdTrans(mesh, w->phys, w->spec);
-// }
-
-
 int main(){
     int startpoint = 0;
     // computation parameters
     int BSZ = 16;
-    int Ns = 40000;
+    int Ns = 500000;
     int Nx = 512; // same as colin
     int Ny = 512;
     int Nxh = Nx/2+1;
@@ -177,6 +113,7 @@ int main(){
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1_curr, r2_curr, w_curr, u, v, alpha, S, Re, Er, cn, lambda);
         r1nonl_func(r1nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
         r2nonl_func(r2nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
+        
         integrate_func1(w_old, w_curr, w_new, wnonl, wIF, wIFh, dt);
         integrate_func1(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func1(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
@@ -209,6 +146,16 @@ int main(){
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1_curr, r2_curr, w_curr, u, v, alpha, S, Re, Er, cn, lambda);
         r1nonl_func(r1nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
         r2nonl_func(r2nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
+
+        // BwdTrans(mesh, wnonl->spec, wnonl->phys);
+        // BwdTrans(mesh, r1nonl->spec, r1nonl->phys);
+        // BwdTrans(mesh, r2nonl->spec, r2nonl->phys);
+        // cuda_error_func( cudaDeviceSynchronize() );
+
+        // field_visual(r1nonl, to_string(m+startpoint)+"r1nonl.csv");
+        // field_visual(r2nonl, to_string(m+startpoint)+"r2nonl.csv");
+        // field_visual(wnonl, to_string(m+startpoint)+"wnonl.csv");
+
         integrate_func4(w_old, w_curr, w_new, wnonl, wIF, wIFh, dt);
         integrate_func4(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func4(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
@@ -236,7 +183,16 @@ int main(){
             field_visual(r2_old, to_string(m+startpoint)+"r2.csv");
             field_visual(w_old, to_string(m+startpoint)+"w.csv");
             field_visual(S, to_string(m+startpoint)+"S.csv");
-            if (std::isnan(r1_old->phys[0])) {"NAN ";exit(0);}
+            BwdTrans(mesh, wnonl->spec, wnonl->phys);
+        BwdTrans(mesh, r1nonl->spec, r1nonl->phys);
+        BwdTrans(mesh, r2nonl->spec, r2nonl->phys);
+        cuda_error_func( cudaDeviceSynchronize() );
+
+        field_visual(r1nonl, to_string(m+startpoint)+"r1nonl.csv");
+        field_visual(r2nonl, to_string(m+startpoint)+"r2nonl.csv");
+        field_visual(wnonl, to_string(m+startpoint)+"wnonl.csv");
+            if (std::isnan(r1_old->phys[0])) {cout << "NAN ";exit(0);}
+            if (S->phys[0] > 1.5) {cout << "S >> 1.0 ";exit(0);}
         }
         // if(m%100 == 0) cout << "t = " << m*dt << endl;
         // if (m%200 == 0){
