@@ -4,7 +4,6 @@
 #include <Basic/QActFlow.h>
 #include <Basic/FldOp.cuh>
 #include <Basic/Field.h>
-// #include <Stream/Streamfunc_dec.cuh>
 #include <Stream/Streamfunc.cuh>
 #include <TimeIntegration/RK4.cuh>
 
@@ -113,7 +112,7 @@ void r1sp_init(Qcomp *r1, int Nxh, int Ny){
         for (int i=0; i<Nxh; i++){
             int index = i+j*Nxh;
             double theta = (float(rand())/RAND_MAX)*2*M_PI;
-            double alt = ((float(rand())/RAND_MAX)-0.5)/(2*Nxh*Ny);
+            double alt = ((float(rand())/RAND_MAX)-0.5);
             r1[index] = make_cuDoubleComplex(alt*cos(theta),alt*sin(theta));
         }
     }
@@ -124,7 +123,7 @@ void r2sp_init(Qcomp *r2, int Nxh, int Ny){
         for (int i=0; i<Nxh; i++){
             int index = i+j*Nxh;
             double theta = (float(rand())/RAND_MAX)*2*M_PI;
-            double alt = ((float(rand())/RAND_MAX)-0.5)/(2*Nxh*Ny);
+            double alt = ((float(rand())/RAND_MAX)-0.5);
             r2[index] = make_cuDoubleComplex(alt*cos(theta),alt*sin(theta));
         }
     }

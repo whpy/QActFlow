@@ -5,7 +5,7 @@ using std::endl;
 
 int main(){
     int startpoint = 0;
-    eInitType Init = Phy_init;
+    eInitType Init = Spec_init;
     cout << "start point = " << startpoint << endl;
     cout << "initialization way: " << InitType[Init] << endl;
     int BSZ = 16;

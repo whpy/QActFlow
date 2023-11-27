@@ -308,7 +308,7 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
     // calculate the physical val of S
     S_funcD<<<r1->mesh->dimGridp, r1->mesh->dimBlockp>>>(r1->phys, r2->phys, S->phys,r1->mesh-> Nx, r1->mesh->Ny, r1->mesh->BSZ);
 
-    // non-linear for r2: 
+
     // \lambda* S* 1/2* (D_x(v)+D_y(u)) + (\omega_z* r1) + (-cn^2/Pe *S^2*r2)
     // + (-1* u* D_x(r2))) + (-1*v*D_y(r2))
     int Nx = r2nonl->mesh->Nx; int Ny = r2nonl->mesh->Ny; int BSZ = r2nonl->mesh->BSZ;
@@ -384,8 +384,9 @@ void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, F
     BwdTrans(r2->mesh,r2->spec, r2->phys);
     BwdTrans(w->mesh, w->spec, w->phys);
     // calculate the physical val of S
-    S_funcD<<<r1->mesh->dimGridp, r1->mesh->dimBlockp>>>(r1->phys, r2->phys, S->phys,r1->mesh-> Nx, r1->mesh->Ny, r1->mesh->BSZ);
-
+    // S_funcD<<<r1->mesh->dimGridp, r1->mesh->dimBlockp>>>(r1->phys, r2->phys, S->phys,r1->mesh-> Nx, r1->mesh->Ny, r1->mesh->BSZ);
+    
+    S_func(r1,r2,S);
     // wnonl = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))  
     //         + (-1* u*D_x(w)) + (-1* v* D_y(w)) 
     Mesh* mesh = wnonl->mesh;
