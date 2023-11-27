@@ -2,7 +2,7 @@
 #include <Basic/FldOp.cuh>
 #include <Basic/Field.h>
 #include <Basic/cuComplexBinOp.hpp>
-#include <Stream/Streamfunc.cuh>
+#include <Stream/Streamfunc_dec.cuh>
 #include <TimeIntegration/RK4.cuh>
 #include <stdlib.h>
 #include <iostream>
@@ -41,7 +41,7 @@ void field_visual(Field *f, string name){
 }
 
 __global__
-void wlin_func(Qreal* IFuh, Qreal* IFu, Qreal* k_squared, Qreal Re,
+void Mwlin_func(Qreal* IFuh, Qreal* IFu, Qreal* k_squared, Qreal Re,
 Qreal dt, int Nxh, int Ny, int BSZ)
 {
     int i = blockIdx.x * BSZ + threadIdx.x;
@@ -54,7 +54,7 @@ Qreal dt, int Nxh, int Ny, int BSZ)
     }
 }
 
-void wnonl_func(Field* wnonl, Field* wcurr, Field* u, Field *v, Qreal t, Field *aux){
+void Mwnonl_func(Field* wnonl, Field* wcurr, Field* u, Field *v, Qreal t, Field *aux){
     Mesh* mesh = wnonl->mesh;
     dim3 dimGrid = mesh->dimGridp;
     dim3 dimBlock = mesh->dimBlockp;
@@ -126,33 +126,89 @@ int main(){
     Qreal dt = 0.02; // same as colin
     // Qreal a = 1.0;
 
-    Qreal Re = 40;
+    Qreal Re = 0.1;
+    Qreal Pe = 1.0;
+    Qreal Er = 0.1;
+    Qreal Ra = -0.2;
+    Qreal cf = sqrt(0.000075);
+    Qreal cn = 1.0;
+    Qreal lambda = 0.1;
+
 
     // Fldset test
     // vortex fields
     Mesh *mesh = new Mesh(BSZ, Nx, Ny, Lx, Ly);
-    Field *wold = new Field(mesh); Field *wcurr = new Field(mesh); Field *wnew = new Field(mesh);
-    Field *wnonl = new Field(mesh);
-
-    // velocity fields
-    Field *u = new Field(mesh);
-    Field *v = new Field(mesh);
+    cout << "Re = " << Re << "  "; cout << "Er = " << Er << endl;
+    cout << "Pe = " << Pe << "  "; cout << "Ra = " << Ra << endl;
+    cout << "cf = " << cf << "  "; cout << "cn = " << cn << "  "; cout << "dt = " << dt << endl;
+    cout << "Lx = " << mesh->Lx << " "<< "Ly = " << mesh->Ly << " " << endl;
+    cout << "Nx = " << mesh->Nx << " "<< "Ny = " << mesh->Ny << " " << endl;
+    cout << "dx = " << mesh->dx << " "<< "dy = " << mesh->dy << " " << endl;
+    cout << "Nx*dx = " << mesh->Nx*mesh->dx << " "<< "Ny*dy = " << mesh->Ny*mesh->dy << " " << endl;
+    cout << "End time: Ns*dt = " << Ns*dt << endl;
+    Field *wold = new Field(mesh); 
+    Field *wcurr = new Field(mesh); 
+    Field *wnew = new Field(mesh);
+    Field *wnonl = new Field(mesh); 
     
-    // time integrating factors
-    Qreal *IFw, *IFwh;
-    cudaMallocManaged(&IFw, sizeof(Qreal)*Nxh*Ny);
+    Field *r1old = new Field(mesh); 
+    Field *r1curr = new Field(mesh); 
+    Field *r1new = new Field(mesh);
+    Field *r1nonl = new Field(mesh); 
+    
+    Field *r2old = new Field(mesh); 
+    Field *r2curr = new Field(mesh); 
+    Field *r2new = new Field(mesh);
+    Field *r2nonl = new Field(mesh);
+    
+    // linear factors
+    Qreal *IFw, *IFwh; 
+    cudaMallocManaged(&IFw, sizeof(Qreal)*Nxh*Ny); 
     cudaMallocManaged(&IFwh, sizeof(Qreal)*Nxh*Ny);
 
-    // auxiliary field
-    Field *aux = new Field(mesh);
+    Qreal *IFr1, *IFr1h;
+    cudaMallocManaged(&IFr1, sizeof(Qreal)*Nxh*Ny);
+    cudaMallocManaged(&IFr1h, sizeof(Qreal)*Nxh*Ny);
 
+    Qreal *IFr2, *IFr2h;
+    cudaMallocManaged(&IFr2, sizeof(Qreal)*Nxh*Ny);
+    cudaMallocManaged(&IFr2h, sizeof(Qreal)*Nxh*Ny);
+
+
+    // intermediate fields
+    
+    Field *u = new Field(mesh); Field *v = new Field(mesh); Field *S = new Field(mesh);
+    Field *p11 = new Field(mesh); Field *p12 = new Field(mesh); Field* p21 = new Field(mesh);
+    
+    // auxiliary fields
+    Field *aux = new Field(mesh); Field *aux1 = new Field(mesh); 
+
+    // field \alpha to be modified (scalar at the very first)
+    Field *alpha = new Field(mesh);
+    
+    // decouple variables
+    Field * r1zero = new Field(mesh);
+    FldSet<<<mesh->dimGridp,mesh->dimBlockp>>>(r1zero->phys, 0.0, mesh->Nx, mesh->Ny, mesh->BSZ);
+    SpecSet<<<mesh->dimGridsp,mesh->dimBlocksp>>>(r1zero->spec, make_cuDoubleComplex(0.0,0.0), mesh->Nxh, mesh->Ny, mesh->BSZ);
+    
+    Field * r2zero = new Field(mesh);
+    FldSet<<<mesh->dimGridp,mesh->dimBlockp>>>(r2zero->phys, 0.0, mesh->Nx, mesh->Ny, mesh->BSZ);
+    SpecSet<<<mesh->dimGridsp,mesh->dimBlocksp>>>(r2zero->spec, make_cuDoubleComplex(0.0,0.0), mesh->Nxh, mesh->Ny, mesh->BSZ);
+    
+    Field * wzero = new Field(mesh);
+    FldSet<<<mesh->dimGridp,mesh->dimBlockp>>>(wzero->phys, 0.0, mesh->Nx, mesh->Ny, mesh->BSZ);
+    SpecSet<<<mesh->dimGridsp,mesh->dimBlocksp>>>(wzero->spec, make_cuDoubleComplex(0.0,0.0), mesh->Nxh, mesh->Ny, mesh->BSZ);
+    
+    
     coord(*mesh);
     // int m = 0;
     // initialize the field
     // set up the Integrating factor
     // we may take place here by IF class
     wlin_func<<<mesh->dimGridsp,mesh->dimBlocksp>>>(IFwh, IFw, mesh->k_squared, Re, 
-    dt, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    cf, dt, mesh->Nxh, mesh->Ny, mesh->BSZ);
+    // Mwlin_func<<<mesh->dimGridsp,mesh->dimBlocksp>>>(IFwh, IFw, mesh->k_squared, Re, 
+    // dt, mesh->Nxh, mesh->Ny, mesh->BSZ);
     // initialize the physical space of w
     init_func<<<mesh->dimGridp,mesh->dimBlockp>>>(wold->phys, 
     mesh->dx, mesh->dy, mesh->Nx, mesh->Ny, mesh->BSZ);
@@ -164,33 +220,25 @@ int main(){
     for(int m=0 ;m<Ns ;m++){
         integrate_func0(wold, wcurr, wnew, IFw, IFwh, dt);
         
-        BwdTrans(mesh, wcurr->spec, wcurr->phys);
-        vel_func(wcurr, u, v);
-        wnonl_func(wnonl, wcurr, u, v, m*dt, aux);
+        wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1zero, r2zero, wcurr, u, v, alpha, S, Re, Er, cn, lambda);
         cuda_error_func( cudaDeviceSynchronize() );
         integrate_func1(wold, wcurr, wnew, wnonl, IFw, IFwh, dt);
         
-        BwdTrans(mesh, wcurr->spec, wcurr->phys);
-        vel_func(wcurr, u, v);
-        wnonl_func(wnonl, wcurr, u, v, m*dt, aux);
+        wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1zero, r2zero, wcurr, u, v, alpha, S, Re, Er, cn, lambda);
         cuda_error_func( cudaDeviceSynchronize() );
         integrate_func2(wold, wcurr, wnew, wnonl, IFw, IFwh, dt);
         
-        BwdTrans(mesh, wcurr->spec, wcurr->phys);
-        vel_func(wcurr, u, v);
-        wnonl_func(wnonl, wcurr, u, v, m*dt, aux);
+        wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1zero, r2zero, wcurr, u, v, alpha, S, Re, Er, cn, lambda);
         cuda_error_func( cudaDeviceSynchronize() );
         integrate_func3(wold, wcurr, wnew, wnonl, IFw, IFwh, dt);
         
-        BwdTrans(mesh, wcurr->spec, wcurr->phys);
-        vel_func(wcurr, u, v);
-        wnonl_func(wnonl, wcurr, u, v, m*dt, aux);
+        wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1zero, r2zero, wcurr, u, v, alpha, S, Re, Er, cn, lambda);
         cuda_error_func( cudaDeviceSynchronize() );
         integrate_func4(wold, wcurr, wnew, wnonl, IFw, IFwh, dt);
         
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(wold->spec, wnew->spec, mesh->Nxh, mesh->Ny, mesh->BSZ);
         
-        if(m%1 == 0) cout << "t = " << m*dt << endl;
+        if(m%1 == 0) cout << "\r" << "t = " << m*dt << flush;
         if (m%20 == 0){
             BwdTrans(mesh, wold->spec, wold->phys);
             cuda_error_func( cudaDeviceSynchronize() );

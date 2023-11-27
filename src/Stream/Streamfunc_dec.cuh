@@ -1,5 +1,5 @@
-#ifndef __STREAMFUNC_CUH
-#define __STREAMFUNC_CUH
+#ifndef __STREAMFUNC_DEC_CUH
+#define __STREAMFUNC_DEC_CUH
 
 #include <Basic/QActFlow.h>
 #include <Basic/Field.h>

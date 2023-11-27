@@ -1,0 +1,11 @@
+in this lab, we simultaneously test the decouple of the both fields 
+Q and vorticity Wz.
+
+the streamfunc_dec without any modification has been tested the decouple effect
+(by input the zero field) has been tested
+
+control0 contains the decouple result(streamfunc_decdec)
+
+control1 contains the decouple result(streamfunc, dt = 0.01)
+
+

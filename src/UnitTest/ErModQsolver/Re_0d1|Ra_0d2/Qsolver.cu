@@ -109,18 +109,18 @@ int main(){
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         
-        curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        // curr_func(r1_curr, r2_curr, w_curr, u, v, S);
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1_curr, r2_curr, w_curr, u, v, alpha, S, Re, Er, cn, lambda);
         r1nonl_func(r1nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
         r2nonl_func(r2nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
-        
         integrate_func1(w_old, w_curr, w_new, wnonl, wIF, wIFh, dt);
         integrate_func1(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func1(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        
+        // curr_func(r1_curr, r2_curr, w_curr, u, v, S);
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1_curr, r2_curr, w_curr, u, v, alpha, S, Re, Er, cn, lambda);
         r1nonl_func(r1nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
         r2nonl_func(r2nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
@@ -131,7 +131,7 @@ int main(){
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        // curr_func(r1_curr, r2_curr, w_curr, u, v, S);
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1_curr, r2_curr, w_curr, u, v, alpha, S, Re, Er, cn, lambda);
         r1nonl_func(r1nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
         r2nonl_func(r2nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
@@ -142,27 +142,13 @@ int main(){
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         // dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        curr_func(r1_curr, r2_curr, w_curr, u, v, S);
+        // curr_func(r1_curr, r2_curr, w_curr, u, v, S);
         wnonl_func(wnonl, aux, aux1, p11, p12, p21, r1_curr, r2_curr, w_curr, u, v, alpha, S, Re, Er, cn, lambda);
         r1nonl_func(r1nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
         r2nonl_func(r2nonl, aux, r1_curr, r2_curr, w_curr, u, v, S, lambda, cn, Pe);
-
-        // BwdTrans(mesh, wnonl->spec, wnonl->phys);
-        // BwdTrans(mesh, r1nonl->spec, r1nonl->phys);
-        // BwdTrans(mesh, r2nonl->spec, r2nonl->phys);
-        // cuda_error_func( cudaDeviceSynchronize() );
-
-        // field_visual(r1nonl, to_string(m+startpoint)+"r1nonl.csv");
-        // field_visual(r2nonl, to_string(m+startpoint)+"r2nonl.csv");
-        // field_visual(wnonl, to_string(m+startpoint)+"wnonl.csv");
-
         integrate_func4(w_old, w_curr, w_new, wnonl, wIF, wIFh, dt);
         integrate_func4(r1_old, r1_curr, r1_new, r1nonl, r1IF, r1IFh, dt);
         integrate_func4(r2_old, r2_curr, r2_new, r2nonl, r2IF, r2IFh, dt);
-        curr_func(r1_curr, r2_curr, w_curr, u, v, S);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r1_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(r2_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
-        dealiasing_func<<<mesh->dimBlocksp, mesh->dimBlocksp>>>(w_curr->spec, mesh->cutoff, mesh->Nxh, mesh->Ny, mesh->BSZ);
         cuda_error_func( cudaDeviceSynchronize() );
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(w_old->spec, w_new->spec, w_old->mesh->Nxh, w_old->mesh->Ny, w_old->mesh->BSZ);
         SpecSet<<<mesh->dimGridsp, mesh->dimBlocksp>>>(r1_old->spec, r1_new->spec, r1_old->mesh->Nxh, r1_old->mesh->Ny, r1_old->mesh->BSZ);

@@ -1,0 +1,3 @@
+control_group is the same group of data as in Taylor vortex while Re=40
+
+we also test the vanilla wlin, it passed(at Re = 40, Re = 0.1 both)

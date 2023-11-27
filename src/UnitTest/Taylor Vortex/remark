@@ -1,3 +1,3 @@
 fric0d1_exp records the init cond that w = exp(-(r^2)/0.1)
-fric0d1 records the init cond that w exactly equals to taylor vortex
+fric0d1 records the init cond that w exactly equals to taylor vortex Re = 40
 fri0d1_phiexp records the init cond that stream func phi equals to exp(-(r^2)/0.1)

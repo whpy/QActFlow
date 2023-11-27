@@ -4,6 +4,7 @@
 #include <Basic/QActFlow.h>
 #include <Basic/FldOp.cuh>
 #include <Basic/Field.h>
+// #include <Stream/Streamfunc_dec.cuh>
 #include <Stream/Streamfunc.cuh>
 #include <TimeIntegration/RK4.cuh>
 
@@ -72,7 +73,8 @@ void r1p_init(Qreal *r1, Qreal dx, Qreal dy, int Nx, int Ny){
             float x = dx*i;
             float y = dy*j;
             // r1[index] = (float(rand())/RAND_MAX)-0.5;
-            r1[index] = -0.00001*(sin(0.1*x+0.2*y)*sin(0.1*x+0.2*y)-0.5);
+            // r1[index] = (double(rand())/RAND_MAX-1)*0.5;
+            r1[index] = 0.2*(sin(x+y)*sin(x+y) - 0.5);
         }
     }
 }
@@ -84,7 +86,8 @@ void r2p_init(Qreal *r2, Qreal dx, Qreal dy, int Nx, int Ny){
             float x = dx*i;
             float y = dy*j;
             // r2[index] = (float(rand())/RAND_MAX)-0.5;
-            r2[index] = 0.00001*cos(0.1*x+0.2*y)*sin(0.1*x+0.2*y);
+            // r2[index] = (double(rand())/RAND_MAX-1)*0.5;
+            r2[index] = 0.2*sin((x+y))*cos((x+y));
         }
     }
 }

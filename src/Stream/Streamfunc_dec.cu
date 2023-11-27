@@ -69,7 +69,7 @@ void r1lin_func(Qreal* IFr1h, Qreal* IFr1, Qreal* k_squared, Qreal Pe, Qreal cn,
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
-    double alpha1 = 1.0/Pe * (-1.0*k_squared[index] + cn*cn);
+    double alpha1 = (-1.0*k_squared[index] + 1.0);
     if(i<Nxh && j<Ny){
         IFr1h[index] = exp( alpha1*dt/2);
         IFr1[index] = exp( alpha1*dt);
@@ -82,7 +82,7 @@ void r2lin_func(Qreal* IFr2h, Qreal* IFr2, Qreal* k_squared, Qreal Pe, Qreal cn,
     int i = blockIdx.x * BSZ + threadIdx.x;
     int j = blockIdx.y * BSZ + threadIdx.y;
     int index = j*Nxh + i;
-    double alpha2 = 1.0/Pe * (-1.0*k_squared[index] + cn*cn);
+    double alpha2 = (-1.0*k_squared[index] + 1.0);
     if(i<Nxh && j<Ny){
         IFr2h[index] = exp( alpha2*dt/2);
         IFr2[index] = exp( alpha2*dt);
@@ -97,7 +97,7 @@ void wlin_func(Qreal* IFwh, Qreal* IFw, Qreal* k_squared, Qreal Re, Qreal cf, Qr
     int index = j*Nxh + i;
     //L(w) = 1/Re*(Laplacian(w) -cf*cf*w)
     // alpha0 = 1/Re*( -k_squared - cf*cf)
-    Qreal alpha0 = 1.0/Re * (-1.0*k_squared[index] - cf*cf);
+    Qreal alpha0 = -1.0/Re *(k_squared[index]) - 1.0/Re *cf*cf;
     if(i<Nxh && j<Ny){
         IFwh[index] = exp( alpha0 *dt/2);
         IFw[index] = exp( alpha0 *dt);
@@ -184,6 +184,14 @@ void p11nonl_func(Field *p11, Field* aux, Field* aux1, Field* r1, Field *r2, Fie
     // p11.phys = \lambda* S(cn^2*(S^2-1)*r1 - \Delta r1) + \alpha*r1
     pSingle_func(p11, aux, r1, S, alpha, lambda,cn);
     // cuda_error_func( cudaDeviceSynchronize() );
+
+    int Nx = p11->mesh->Nx;
+    int Ny = p11->mesh->Ny;
+    int BSZ = p11->mesh->BSZ;
+    dim3 dimGrid = p11->mesh->dimGridp;
+    dim3 dimBlock = p11->mesh->dimBlockp;
+    // decouple here
+    // FldSet<<<dimGrid, dimBlock>>>(p11->phys, 0.0, Nx, Ny, BSZ);
     FwdTrans(p11->mesh, p11->phys, p11->spec);
     // p11 spectral update finished
 }
@@ -202,6 +210,10 @@ void p12nonl_func(Field *p12, Field *aux, Field *aux1, Field *r1, Field *r2, Fie
     // p12.phys = p12.phys + aux.phys = Cross(r1,r2) + Single(r2)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, p12->phys, 1.0, aux->phys, p12->phys, Nx, Ny, BSZ);
     // cuda_error_func( cudaDeviceSynchronize() );
+
+
+    // decouple here
+    // FldSet<<<dimGrid, dimBlock>>>(p12->phys, 0.0, Nx, Ny, BSZ);
     FwdTrans(p12->mesh, p12->phys, p12->spec);
     // cuda_error_func( cudaDeviceSynchronize() );
     // p12 spectral update finished
@@ -222,6 +234,9 @@ void p21nonl_func(Field *p21, Field *aux, Field *aux1, Field *r1, Field *r2, Fie
     // p21.phys = p21.phys + aux.phys = Cross(r2,r1) + Single(r2)
     FldAdd<<<dimGrid, dimBlock>>>(1.0, p21->phys, 1.0, aux->phys, p21->phys, Nx, Ny, BSZ);
     // cuda_error_func( cudaDeviceSynchronize() );
+
+    // decouple here
+    // FldSet<<<dimGrid, dimBlock>>>(p21->phys, 0.0, Nx, Ny, BSZ);
     FwdTrans(p21->mesh, p21->phys, p21->spec);
     // p21 spectral update finished
 }
@@ -229,20 +244,19 @@ void p21nonl_func(Field *p21, Field *aux, Field *aux1, Field *r1, Field *r2, Fie
 
 void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w, 
                         Field *u, Field *v, Field *S, Qreal lambda, Qreal cn, Qreal Pe){
+    Mesh *mesh = r1nonl->mesh;
+    int Nx = mesh->Nx; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
+    dim3 dimGrid = mesh->dimGridp;
+    dim3 dimBlock = mesh->dimBlockp;
+    
     vel_func(w, u, v);
     BwdTrans(r1->mesh,r1->spec, r1->phys);
     BwdTrans(r2->mesh,r2->spec, r2->phys);
     BwdTrans(w->mesh, w->spec, w->phys);
     // calculate the physical val of S
-    S_funcD<<<r1->mesh->dimGridp, r1->mesh->dimBlockp>>>(r1->phys, r2->phys, S->phys,r1->mesh-> Nx, r1->mesh->Ny, r1->mesh->BSZ);
-
-    // non-linear for r1: 
-    // \lambda S\frac{\partial u}{\partial x}  + (-1* \omega_z* r2) + (-cn^2/Pe *S^2*r1)
-    // + (-1* u* D_x\omega_z) + (-1*v*D_y(\omega_z))
-    Mesh *mesh = r1nonl->mesh;
-    int Nx = mesh->Nx; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
-    dim3 dimGrid = mesh->dimGridp;
-    dim3 dimBlock = mesh->dimBlockp;
+    S_func(r1, r2, S);
+    // S_funcD<<<r1->mesh->dimGridp, r1->mesh->dimBlockp>>>(r1->phys, r2->phys, S->phys,r1->mesh-> Nx, r1->mesh->Ny, r1->mesh->BSZ);
+    
 
     // \lambda S\frac{\partial u}{\partial x}
     //aux.spec = \partial_x u
@@ -301,18 +315,25 @@ void r1nonl_func(Field *r1nonl, Field *aux, Field *r1, Field *r2, Field *w,
 
 void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w, 
                         Field *u, Field *v, Field *S, Qreal lambda, Qreal cn, Qreal Pe){
+    Mesh *mesh = r2nonl->mesh;
+    int Nx = mesh->Nx; int Ny = mesh->Ny; int BSZ = mesh->BSZ;
+    dim3 dimGrid = mesh->dimGridp;
+    dim3 dimBlock = mesh->dimBlockp;
+   
     vel_func(w, u, v);
     BwdTrans(r1->mesh,r1->spec, r1->phys);
     BwdTrans(r2->mesh,r2->spec, r2->phys);
     BwdTrans(w->mesh, w->spec, w->phys);
     // calculate the physical val of S
-    S_funcD<<<r1->mesh->dimGridp, r1->mesh->dimBlockp>>>(r1->phys, r2->phys, S->phys,r1->mesh-> Nx, r1->mesh->Ny, r1->mesh->BSZ);
+    S_func(r1, r2, S);
 
     // non-linear for r2: 
     // \lambda* S* 1/2* (D_x(v)+D_y(u)) + (\omega_z* r1) + (-cn^2/Pe *S^2*r2)
     // + (-1* u* D_x(r2))) + (-1*v*D_y(r2))
-    int Nx = r2nonl->mesh->Nx; int Ny = r2nonl->mesh->Ny; int BSZ = r2nonl->mesh->BSZ;
-    dim3 dimGrid = r2nonl->mesh->dimGridp; dim3 dimBlock = r2nonl->mesh->dimBlockp;
+
+    // FldMul<<<dimGrid, dimBlock>>>(S->phys, S->phys, -1.0, r2nonl->phys,Nx, Ny, BSZ);
+    // FldMul<<<dimGrid, dimBlock>>>(r2->phys, r2nonl->phys, 1.0, r2nonl->phys,Nx, Ny, BSZ);
+
 
     // \lambda* S* 1/2* (D_x(v))
     //aux.spec = (D_x(v))
@@ -379,22 +400,29 @@ void r2nonl_func(Field *r2nonl, Field *aux, Field *r1, Field *r2, Field *w,
 
 void wnonl_func(Field *wnonl, Field *aux, Field *aux1, Field *p11, Field *p12, Field *p21, Field *r1, Field *r2, Field *w, 
                         Field *u, Field *v, Field *alpha, Field *S, Qreal Re, Qreal Er, Qreal cn, Qreal lambda){
+    Mesh* mesh = wnonl->mesh;
+    int BSZ = mesh->BSZ;
+    int Nx = mesh->Nx; int Ny = mesh->Ny; int Nxh = mesh->Nxh;
+    // decouple Q here
+
     vel_func(w, u, v);
     BwdTrans(r1->mesh,r1->spec, r1->phys);
     BwdTrans(r2->mesh,r2->spec, r2->phys);
     BwdTrans(w->mesh, w->spec, w->phys);
     // calculate the physical val of S
-    S_funcD<<<r1->mesh->dimGridp, r1->mesh->dimBlockp>>>(r1->phys, r2->phys, S->phys,r1->mesh-> Nx, r1->mesh->Ny, r1->mesh->BSZ);
+    S_func(r1, r2, S);
+    // S_funcD<<<r1->mesh->dimGridp, r1->mesh->dimBlockp>>>(r1->phys, r2->phys, S->phys,r1->mesh-> Nx, r1->mesh->Ny, r1->mesh->BSZ);
 
     // wnonl = 1/(Re*Er) * (D^2_xx(p12) - 2*D^2_xy(p11) - D^2_yy(p21))  
     //         + (-1* u*D_x(w)) + (-1* v* D_y(w)) 
-    Mesh* mesh = wnonl->mesh;
-    int BSZ = mesh->BSZ;
-    int Nx = mesh->Nx; int Ny = mesh->Ny; int Nxh = mesh->Nxh;
-
     p11nonl_func(p11, aux, aux1, r1, r2, S, alpha, lambda, cn); 
     p12nonl_func(p12, aux, aux1, r1, r2, S, alpha, lambda, cn); 
     p21nonl_func(p21, aux, aux1, r1, r2, S, alpha, lambda, cn); 
+    
+    // diminish the cross matrix
+    SpecSet<<<mesh->dimGridsp,mesh->dimBlocksp>>>(p11->spec, make_cuDoubleComplex(0.0,0.0),mesh->Nxh, mesh->Ny, mesh->BSZ);
+    SpecSet<<<mesh->dimGridsp,mesh->dimBlocksp>>>(p12->spec, make_cuDoubleComplex(0.0,0.0),mesh->Nxh, mesh->Ny, mesh->BSZ);
+    SpecSet<<<mesh->dimGridsp,mesh->dimBlocksp>>>(p21->spec, make_cuDoubleComplex(0.0,0.0),mesh->Nxh, mesh->Ny, mesh->BSZ);
     
     // aux.spec = D_x(p12)
     xDeriv(p12->spec, aux->spec, p12->mesh);
