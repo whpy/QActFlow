@@ -4,7 +4,7 @@ using std::cout;
 using std::endl;
 
 int main(){
-    int startpoint = 15520;
+    int startpoint = 13440;
     eInitType Init = File_init;
     cout << "start point = " << startpoint << endl;
     cout << "initialization way: " << InitType[Init] << endl;
@@ -17,7 +17,7 @@ int main(){
     Qreal Ly = Lx;
     Qreal dx = Lx/Nx;
     Qreal dy = Ly/Ny;
-    Qreal dt = 0.0005; // same as colin
+    Qreal dt = 0.002; // same as colin
     // Qreal a = 1.0;
 
     Qreal Re = 0.1;
@@ -33,6 +33,7 @@ int main(){
     // *_new store the value of next time step 
 
     Mesh *mesh = new Mesh(BSZ, Nx, Ny, Lx, Ly);
+    coord(*mesh);
     
     cout << "Re = " << Re << "  "; cout << "Er = " << Er << "   "; 
     cout << "Pe = " << Pe << "  "; cout << "Ra = " << Ra << endl;
@@ -145,14 +146,7 @@ int main(){
         cuda_error_func( cudaDeviceSynchronize() );
 
         // RK4 step 1
-        vel_func(wcurr, u, v);
-        BwdTrans(r1curr->mesh,r1curr->spec, r1curr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        BwdTrans(r2curr->mesh,r2curr->spec, r2curr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        BwdTrans(wcurr->mesh, wcurr->spec, wcurr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        S_func(r1curr,r2curr,S);
+        // curr_func(r1curr,r2curr, wcurr, u, v, S);
         cuda_error_func( cudaDeviceSynchronize() );
 
         r1nonl_func(r1nonl, aux, r1curr, r2curr, wcurr, u, v, S, lambda, cn, Pe);
@@ -171,14 +165,7 @@ int main(){
         cuda_error_func( cudaDeviceSynchronize() );
 
         // RK4 step 2
-        vel_func(wcurr, u, v);
-        BwdTrans(r1curr->mesh,r1curr->spec, r1curr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        BwdTrans(r2curr->mesh,r2curr->spec, r2curr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        BwdTrans(wcurr->mesh, wcurr->spec, wcurr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        S_func(r1curr,r2curr,S);
+        // curr_func(r1curr,r2curr, wcurr, u, v, S);
         cuda_error_func( cudaDeviceSynchronize() );
 
         r1nonl_func(r1nonl, aux, r1curr, r2curr, wcurr, u, v, S, lambda, cn, Pe);
@@ -197,14 +184,7 @@ int main(){
         cuda_error_func( cudaDeviceSynchronize() );
         
         // RK4 step 3
-        vel_func(wcurr, u, v);
-        BwdTrans(r1curr->mesh,r1curr->spec, r1curr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        BwdTrans(r2curr->mesh,r2curr->spec, r2curr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        BwdTrans(wcurr->mesh, wcurr->spec, wcurr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        S_func(r1curr,r2curr,S);
+        // curr_func(r1curr,r2curr, wcurr, u, v, S);
         cuda_error_func( cudaDeviceSynchronize() );
 
         r1nonl_func(r1nonl, aux, r1curr, r2curr, wcurr, u, v, S, lambda, cn, Pe);
@@ -223,14 +203,7 @@ int main(){
         cuda_error_func( cudaDeviceSynchronize() );
         
         // RK4 step4
-        vel_func(wcurr, u, v);
-        BwdTrans(r1curr->mesh,r1curr->spec, r1curr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        BwdTrans(r2curr->mesh,r2curr->spec, r2curr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        BwdTrans(wcurr->mesh, wcurr->spec, wcurr->phys);
-        cuda_error_func( cudaDeviceSynchronize() );
-        S_func(r1curr,r2curr,S);
+        // curr_func(r1curr,r2curr, wcurr, u, v, S);
         cuda_error_func( cudaDeviceSynchronize() );
 
         r1nonl_func(r1nonl, aux, r1curr, r2curr, wcurr, u, v, S, lambda, cn, Pe);

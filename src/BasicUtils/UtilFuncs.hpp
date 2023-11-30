@@ -25,6 +25,19 @@ void field_visual(Field *f, string name){
     fval.close();
 }
 
+void spec_visual(Qreal *IF, Mesh* mesh, string name){
+    ofstream fval;
+    string fname = name;
+    fval.open(fname);
+    for (int j=0; j<mesh->Ny; j++){
+        for (int i=0; i<mesh->Nxh; i++){
+            fval << IF[j*mesh->Nxh+i] << ",";
+        }
+        fval << endl;
+    }
+    fval.close();
+}
+
 void print_spec(Field* f){
     Mesh* mesh = f->mesh;
     int Nxh = mesh->Nxh, Ny = mesh->Ny;

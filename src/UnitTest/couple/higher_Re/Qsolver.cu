@@ -4,12 +4,12 @@ using std::cout;
 using std::endl;
 
 int main(){
-    int startpoint = 15520;
-    eInitType Init = File_init;
+    int startpoint = 0;
+    eInitType Init = Phy_init;
     cout << "start point = " << startpoint << endl;
     cout << "initialization way: " << InitType[Init] << endl;
     int BSZ = 16;
-    int Ns = 100001;
+    int Ns = 150001;
     int Nx = 512; // same as colin
     int Ny = 512;
     int Nxh = Nx/2+1;
@@ -17,10 +17,10 @@ int main(){
     Qreal Ly = Lx;
     Qreal dx = Lx/Nx;
     Qreal dy = Ly/Ny;
-    Qreal dt = 0.0005; // same as colin
+    Qreal dt = 0.0001; // same as colin
     // Qreal a = 1.0;
 
-    Qreal Re = 0.1;
+    Qreal Re = 1.0;
     Qreal Pe = 1.0;
     Qreal Er = 0.1;
     Qreal Ra = -0.2;
@@ -33,6 +33,7 @@ int main(){
     // *_new store the value of next time step 
 
     Mesh *mesh = new Mesh(BSZ, Nx, Ny, Lx, Ly);
+    coord(*mesh);
     
     cout << "Re = " << Re << "  "; cout << "Er = " << Er << "   "; 
     cout << "Pe = " << Pe << "  "; cout << "Ra = " << Ra << endl;

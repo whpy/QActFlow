@@ -1,12 +1,6 @@
 #ifndef __MQSOLVER_CUH
 #define __MQSOLVER_CUH
 
-
-
-
-
-
-
 #include <Basic/QActFlow.h>
 #include <Basic/FldOp.cuh>
 #include <Basic/Field.h>

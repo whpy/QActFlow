@@ -13,8 +13,8 @@ int main(){
     int Nx = 512; // same as colin
     int Ny = 512;
     int Nxh = Nx/2+1;
-    Qreal Lx = 4*M_PI;
-    Qreal Ly = 4*M_PI;
+    Qreal Lx = 33* 2*M_PI;
+    Qreal Ly = Lx;
     Qreal dx = Lx/Nx;
     Qreal dy = Ly/Ny;
     Qreal dt = 0.002; // same as colin
@@ -110,6 +110,16 @@ int main(){
 
     wlin_func<<<mesh->dimGridsp, mesh->dimBlocksp>>>(IFwh, IFw, mesh->k_squared, Re, cf, dt, mesh->Nxh, mesh->Ny, mesh->BSZ);
     cuda_error_func( cudaDeviceSynchronize() );
+
+    spec_visual(mesh->k_squared, mesh, "ksquared.csv");
+    
+    spec_visual(IFr1, mesh, "IFr1.csv");
+    spec_visual(IFr2, mesh, "IFr2.csv");
+    spec_visual(IFw, mesh, "IFwh.csv");
+
+    spec_visual(IFr1h, mesh, "IFr1h.csv");
+    spec_visual(IFr2h, mesh, "IFr2h.csv");
+    spec_visual(IFwh, mesh, "IFwh.csv");
     
     // the precomputation function also updates the spectrum of corresponding variables
     precompute_func(r1old, r2old, wold, Init);
